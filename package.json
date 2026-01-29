@@ -1,0 +1,28 @@
+{
+  "name": "journal-app",
+  "version": "1.0.0",
+  "description": "A Journal Application for demonstration purposes.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/umass-cs-326/journal-app.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/umass-cs-326/journal-app/issues"
+  },
+  "homepage": "https://github.com/umass-cs-326/journal-app#readme",
+  "dependencies": {
+    "express": "^5.2.1",
+    "ts-node": "^10.9.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6"
+  }
+}

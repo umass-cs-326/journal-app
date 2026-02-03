@@ -35,6 +35,11 @@ export class ExpressApp implements IApp {
       // is in the URL: "/" vs "/journal.html".
       res.sendFile("journal.html", { root: "static" });
     });
+
+    // Features route serving a static HTML page
+    this.app.get("/features", (_req: Request, res: Response) => {
+      res.sendFile("features.html", { root: "static" });
+    });
   }
 
   getExpressApp(): express.Express {

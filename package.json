@@ -4,7 +4,8 @@
   "description": "A Journal Application for demonstration purposes.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "npm run build && node dist/server.js",
+    "build": "tsc --outDir dist -m nodenext -t es2024 --esModuleInterop src/app.ts src/server.ts"
   },
   "repository": {
     "type": "git",

@@ -39,6 +39,26 @@ Keep your work isolated to this branch and make it recoverable:
 
 Why this matters: staging lets you confirm exactly what will be recorded; committing creates a checkpoint you can roll back to; pushing keeps your work synchronized and prevents it from leaking into other branches.
 
+## Verifying Your Work
+
+1. Start the server (e.g., `npm run dev` or your project’s start script).
+2. Visit `http://localhost:3000/features` in the browser.
+3. Confirm you see the list of features you created.
+4. If you edit `features.html`, refresh the browser to view updates; the route should always serve the file from disk.
+5. If something goes wrong, check:
+   - The server console for error messages.
+   - That the route in `app.ts` matches `/features`.
+   - That `features.html` is in the `static/` directory.
+
+## Solution Walkthrough
+
+To view the solution for any exercise, switch to its companion solution branch and open the matching `.solution.md` file in `exercises/`:
+
+- VS Code: Command Palette → “Git: Checkout to...” → pick the `exe-<exercise-number>-solution` branch.
+- Command line: `git checkout exe-<exercise-number>-solution`
+
+Once on the solution branch, open `exercises/exe-<exercise-number>.solution.md` to read the step-by-step explanation.
+
 ---
 
 [^1]: For more information on using Git in VS Code, see [Version Control in VS Code](https://code.visualstudio.com/docs/sourcecontrol/overview).

@@ -17,7 +17,7 @@ Later assignments assume you’re comfortable wiring routes to responses, distin
 1. Clone the course repository: `git clone https://github.com/umass-cs-326/journal-app.git`
 2. Open the `journal-app` folder in VS Code.
 3. Switch to branch `1.2-elevating-the-design-of-a-journal-application`:
-   - VS Code: open the Command Palette (`Cmd/Ctrl+Shift+P`) → “Git: Checkout to...” → pick the branch name.
+   - VS Code: open the Command Palette (`Cmd/Ctrl+Shift+P`) → “Git: Checkout to...” → pick the branch name. [^1]
    - Command line: `git checkout 1.2-elevating-the-design-of-a-journal-application`
 
 ## Exercise Instructions

@@ -20,3 +20,4 @@ This application is part of an 8-week series of lectures on building web applica
    - Under the hood, this runs `npm run build` and then `node dist/server.js`.
 3. Or build only: `npm run build` (outputs compiled files to `dist/`).
 4. Open the app: visit `http://localhost:3000/` for the home page or `http://localhost:3000/features` for the new features page.
+5. Stop the server: `Ctrl+C` in the terminal.

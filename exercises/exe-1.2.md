@@ -35,9 +35,8 @@ Keep your work isolated to this branch and make it recoverable:
    - VS Code: open Source Control, review the file list, and click “+” to stage each file (`src/app.ts`, `static/features.html`, and any others). [^1]
    - Terminal: `git add src/app.ts static/features.html` (add any additional modified files).
 2. Commit with a clear message, e.g., `git commit -m "Add /features route and static page"`.
-3. When you have network access, push to this branch: `git push origin 1.2-elevating-the-design-of-a-journal-application`.
 
-Why this matters: staging lets you confirm exactly what will be recorded; committing creates a checkpoint you can roll back to; pushing keeps your work synchronized and prevents it from leaking into other branches.
+Why this matters: staging lets you confirm exactly what will be recorded; committing creates a checkpoint you can roll back to if needed.
 
 ## Verifying Your Work
 

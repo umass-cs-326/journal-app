@@ -1,5 +1,8 @@
 import type { IApp, IServer } from "./contracts";
 import { CreateApp } from "./app";
+import { CreateJournalRepository } from './repository/JournalRespository';
+import { CreateJournalService } from './service/JournalService';
+import { CreateJournalController } from './controller/JournalController';
 
 /**
  * HttpServer implements IServer.
@@ -24,7 +27,11 @@ export class HttpServer implements IServer {
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
 
-const app = CreateApp();
+// Now we compose the application and start the server.
+const repository = CreateJournalRepository();
+const service = CreateJournalService(repository);
+const controller = CreateJournalController(service);
+const app = CreateApp(controller);
 const server = new HttpServer(app);
 
 server.start(PORT);

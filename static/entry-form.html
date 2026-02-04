@@ -1,0 +1,21 @@
+<html>
+  <head>
+    <title>Journal App</title>
+    <link rel="stylesheet" type="text/css" href="/styles.css" />
+  </head>
+  <body>
+    <h1>Add a Journal Entry!</h1>
+    <form action="/entries/new" method="POST">
+      <label for="content">Entry</label>
+      <textarea
+        id="content"
+        name="content"
+        rows="8"
+        cols="60"
+        required
+      ></textarea>
+      <br />
+      <button type="submit">Save Entry</button>
+    </form>
+  </body>
+</html>

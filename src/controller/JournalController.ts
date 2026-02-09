@@ -9,6 +9,7 @@ export interface IJournalController {
   showAllEntries(res: Response): void;
   showEntry(res: Response, id: string): void;
   replaceEntry(res: Response, id: string, content: string): void;
+  patchEntry(res: Response, id: string, content: string): void;
 }
 
 class JournalController implements IJournalController {
@@ -57,6 +58,12 @@ class JournalController implements IJournalController {
   replaceEntry(res: Response, id: string, content: string): void {
     this.logger.info(`Replacing entry ${id} via PUT`);
     const updated = this.service.replaceEntry(id, content);
+    res.json(updated);
+  }
+
+  patchEntry(res: Response, id: string, content: string): void {
+    this.logger.info(`Patching entry ${id} via PATCH`);
+    const updated = this.service.patchEntry(id, content);
     res.json(updated);
   }
 }

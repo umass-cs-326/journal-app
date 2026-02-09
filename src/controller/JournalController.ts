@@ -1,5 +1,6 @@
 import type { Response } from 'express';
 import { IJournalService } from '../service/JournalService';
+import { ILoggingService } from "../service/LoggingService";
 
 export interface IJournalController {
   showHome(res: Response): void;
@@ -10,22 +11,29 @@ export interface IJournalController {
 }
 
 class JournalController implements IJournalController {
-  constructor(private readonly service: IJournalService) {}
+  constructor(
+    private readonly service: IJournalService,
+    private readonly logger: ILoggingService
+  ) {}
 
   showHome(res: Response): void {
+    this.logger.info("Rendering home page");
     res.sendFile("journal.html", { root: "static" });
   }
 
   showEntryForm(res: Response): void {
+    this.logger.info("Rendering new entry form");
     res.sendFile("entry-form.html", { root: "static" });
   }
 
   newEntryFromForm(res: Response, content: string): void {
+    this.logger.info("Creating entry from form");
     this.service.createEntry(content);
     res.redirect("/");
   }
 
   showAllEntries(res: Response): void {
+    this.logger.info("Listing all journal entries");
     const entries = this.service.getEntries();
     let html = "<h1>All Journal Entries</h1><ul>";
     for (const entry of entries) {
@@ -36,6 +44,7 @@ class JournalController implements IJournalController {
   }
 
   showEntry(res: Response, id: string): void {
+    this.logger.info(`Showing entry ${id}`);
     let html = "<h1>Journal Entry Not Found</h1>";
     const entry = this.service.getEntry(id);
     if (entry) {
@@ -45,6 +54,9 @@ class JournalController implements IJournalController {
   }
 }
 
-export function CreateJournalController(service: IJournalService): IJournalController {
-  return new JournalController(service);
+export function CreateJournalController(
+  service: IJournalService,
+  logger: ILoggingService
+): IJournalController {
+  return new JournalController(service, logger);
 }

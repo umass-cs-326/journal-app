@@ -27,38 +27,31 @@ export class ExpressApp implements IApp {
   }
 
   registerRoutes(): void {
-    // Required because of how 'this' works in JS/TS
-    const showHome = (res: Response) => this.controller.showHome(res);
-    const showEntryForm = (res: Response) => this.controller.showEntryForm(res);
-    const newEntryFromForm = (res: Response, content: string) =>
-      this.controller.newEntryFromForm(res, content);
-    const showAllEntries = (res: Response) => this.controller.showAllEntries(res);
-    const showEntry = (res: Response, id: string) =>
-      this.controller.showEntry(res, id);
+    const controller = this.controller;
 
     // Home route serving a simple HTML page
-    this.app.get("/", (_req: Request, res: Response) => showHome(res));
+    this.app.get("/", (_req: Request, res: Response) => controller.showHome(res));
 
     // Route to show the form for a new journal entry
     this.app.get("/entries/new", (_req: Request, res: Response) =>
-      showEntryForm(res)
+      controller.showEntryForm(res)
     );
 
     // Route to handle form submission for a new journal entry
     this.app.post("/entries/new", express.urlencoded({ extended: true }), (req: Request, res: Response) => {
       const content = req.body.content;
-      newEntryFromForm(res, content);
+      controller.newEntryFromForm(res, content);
     });
 
     // Route to show all journal entries
     this.app.get("/entries", (_req: Request, res: Response) =>
-      showAllEntries(res)
+      controller.showAllEntries(res)
     );
 
     // Route to show a specific journal entry by ID
     this.app.get("/entries/:id", (req: Request, res: Response) => {
       const id = req.params.id as string;
-      showEntry(res, id);
+      controller.showEntry(res, id);
     });
   }
 

@@ -11,6 +11,7 @@ export interface IJournalService {
   createEntry(content: string): IJournalEntry;
   getEntry(id: string): IJournalEntry;
   getEntries(): IJournalEntry[];
+  replaceEntry(id: string, content: string): IJournalEntry;
 }
 
 class JournalService implements IJournalService {
@@ -26,6 +27,10 @@ class JournalService implements IJournalService {
 
   getEntries(): IJournalEntry[] {
     return this.repository.getAll();
+  }
+
+  replaceEntry(id: string, content: string): IJournalEntry {
+    return this.repository.replaceById(id, content);
   }
 }
 

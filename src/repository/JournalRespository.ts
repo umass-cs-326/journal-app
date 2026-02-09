@@ -10,6 +10,7 @@ export interface IJournalRepository {
   add(content: string): IJournalEntry;
   getById(id: string): IJournalEntry;
   getAll(): IJournalEntry[];
+  replaceById(id: string, content: string): IJournalEntry;
 }
 
 class JournalRepository implements IJournalRepository {
@@ -33,6 +34,17 @@ class JournalRepository implements IJournalRepository {
 
   getAll(): IJournalEntry[] {
     return this.entries;
+  }
+
+  replaceById(id: string, content: string): IJournalEntry {
+    for (let i = 0; i < this.entries.length; i += 1) {
+      if (this.entries[i].id === id) {
+        this.entries[i].content = content;
+        this.entries[i].updatedAt = new Date();
+        return this.entries[i];
+      }
+    }
+    throw new Error(`Journal entry with id ${id} not found`);
   }
 }
 

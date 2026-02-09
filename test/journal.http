@@ -9,3 +9,6 @@ POST http://localhost:3000/entries/new
 Content-Type: application/x-www-form-urlencoded
 
 content=Baseline+entry
+
+### Step 6 checkpoint: existing GET still works after PUT internals
+GET http://localhost:3000/entries/1

@@ -34,7 +34,10 @@ export class ExpressApp implements IApp {
     const controller = this.controller;
 
     // Home route serving a simple HTML page
-    this.app.get("/", (_req: Request, res: Response) => controller.showHome(res));
+    this.app.get("/", (_req: Request, res: Response) => {
+      this.logger.info("GET /");
+      this.controller.showHome(res);
+    });
 
     // Route to show the form for a new journal entry
     this.app.get("/entries/new", (_req: Request, res: Response) =>

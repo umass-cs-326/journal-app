@@ -6,3 +6,6 @@ GET http://localhost:3000/entries
 
 ### Step 3 checkpoint: create form route still loads
 GET http://localhost:3000/entries/new
+
+### Step 4 checkpoint: route-level logging observable
+GET http://localhost:3000/

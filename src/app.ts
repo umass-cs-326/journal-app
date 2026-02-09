@@ -3,6 +3,7 @@ import express, { response } from "express";
 // We need these types to type our route handlers
 import { Request, Response } from "express";
 import { IJournalController } from './controller/JournalController';
+import { ILoggingService } from "./service/LoggingService";
 
 /**
  * ExpressApp implements IApp.
@@ -13,7 +14,10 @@ import { IJournalController } from './controller/JournalController';
 export class ExpressApp implements IApp {
   private readonly app: express.Express;
 
-  constructor(private readonly controller: IJournalController) {
+  constructor(
+    private readonly controller: IJournalController,
+    private readonly logger: ILoggingService
+  ) {
     this.app = express();
     // Register middleware and routes
     this.registerMiddleware();
@@ -65,5 +69,5 @@ export class ExpressApp implements IApp {
  * Keeping this as a function makes it easy to create a fresh app per test.
  */
 export const CreateApp = 
-  (controller: IJournalController): ExpressApp => 
-    new ExpressApp(controller);
+  (controller: IJournalController, logger: ILoggingService): ExpressApp => 
+    new ExpressApp(controller, logger);

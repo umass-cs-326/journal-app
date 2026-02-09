@@ -1,2 +1,5 @@
 ### Step 1 checkpoint: baseline home still loads
 GET http://localhost:3000/
+
+### Step 2 checkpoint: app still boots and serves entries
+GET http://localhost:3000/entries

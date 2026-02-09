@@ -1,3 +1,7 @@
+### Keep requests ordered by feature step:
+### baseline -> PUT slice -> PATCH slice -> DELETE slice -> GET/POST UI routes
+### and UI verification checkpoints.
+
 ### Step 5 baseline: home
 GET http://localhost:3000/
 

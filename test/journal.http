@@ -12,3 +12,6 @@ content=Baseline+entry
 
 ### Step 6 checkpoint: existing GET still works after PUT internals
 GET http://localhost:3000/entries/1
+
+### Step 7 checkpoint: existing list still works after PUT controller
+GET http://localhost:3000/entries

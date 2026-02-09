@@ -8,6 +8,7 @@ export interface IJournalController {
   newEntryFromForm(res: Response, content: string): void;
   showAllEntries(res: Response): void;
   showEntry(res: Response, id: string): void;
+  replaceEntry(res: Response, id: string, content: string): void;
 }
 
 class JournalController implements IJournalController {
@@ -51,6 +52,12 @@ class JournalController implements IJournalController {
       html = `<h1>Journal Entry</h1><p>${entry.content}</p>`;
     }
     res.send(html);
+  }
+
+  replaceEntry(res: Response, id: string, content: string): void {
+    this.logger.info(`Replacing entry ${id} via PUT`);
+    const updated = this.service.replaceEntry(id, content);
+    res.json(updated);
   }
 }
 

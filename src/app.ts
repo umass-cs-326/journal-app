@@ -60,6 +60,13 @@ export class ExpressApp implements IApp {
       const id = req.params.id as string;
       controller.showEntry(res, id);
     });
+
+    this.app.put("/api/entries/:id", express.json(), (req, res) => {
+      this.logger.info(`PUT /api/entries/${req.params.id}`);
+      const id = req.params.id as string;
+      const content = req.body.content as string;
+      this.controller.replaceEntry(res, id, content);
+    });
   }
 
   getExpressApp(): express.Express {

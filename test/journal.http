@@ -54,3 +54,6 @@ GET http://localhost:3000/entries/1
 
 ### Step 16 verify GET edit form route
 GET http://localhost:3000/entries/1/edit
+
+### Step 17 checkpoint: GET edit still works before POST route
+GET http://localhost:3000/entries/1/edit

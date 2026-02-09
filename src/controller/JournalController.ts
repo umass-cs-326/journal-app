@@ -9,6 +9,7 @@ export interface IJournalController {
   showAllEntries(res: Response): void;
   showEntry(res: Response, id: string): void;
   showEditForm(res: Response, id: string): void;
+  updateEntryFromForm(res: Response, id: string, content: string): void;
   replaceEntry(res: Response, id: string, content: string): void;
   patchEntry(res: Response, id: string, content: string): void;
   deleteEntry(res: Response, id: string): void;
@@ -66,6 +67,12 @@ class JournalController implements IJournalController {
         <button type="submit">Save Changes</button>
       </form>`;
     res.send(html);
+  }
+
+  updateEntryFromForm(res: Response, id: string, content: string): void {
+    this.logger.info(`Updating entry ${id} from form POST`);
+    this.service.patchEntry(id, content);
+    res.redirect(`/entries/${id}`);
   }
 
   replaceEntry(res: Response, id: string, content: string): void {

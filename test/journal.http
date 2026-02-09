@@ -1,0 +1,2 @@
+### Step 1 checkpoint: baseline home still loads
+GET http://localhost:3000/

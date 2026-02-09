@@ -74,6 +74,12 @@ export class ExpressApp implements IApp {
       const content = req.body.content as string;
       this.controller.patchEntry(res, id, content);
     });
+
+    this.app.delete("/api/entries/:id", (req: Request, res: Response) => {
+      this.logger.info(`DELETE /api/entries/${req.params.id}`);
+      const id = req.params.id as string;
+      this.controller.deleteEntry(res, id);
+    });
   }
 
   getExpressApp(): express.Express {

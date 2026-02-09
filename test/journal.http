@@ -63,3 +63,6 @@ POST http://localhost:3000/entries/1/edit
 Content-Type: application/x-www-form-urlencoded
 
 content=Edited+from+form
+
+### Step 19 verify entry page includes edit link
+GET http://localhost:3000/entries/1

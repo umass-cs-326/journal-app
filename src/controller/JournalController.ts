@@ -53,7 +53,9 @@ class JournalController implements IJournalController {
     let html = "<h1>Journal Entry Not Found</h1>";
     const entry = this.service.getEntry(id);
     if (entry) {
-      html = `<h1>Journal Entry</h1><p>${entry.content}</p>`;
+      html = `<h1>Journal Entry</h1><p>${entry.content}</p>
+        <p><a href="/entries/${entry.id}/edit">Edit Entry</a></p>
+        <p><a href="/entries">Back to Entries</a></p>`;
     }
     res.send(html);
   }

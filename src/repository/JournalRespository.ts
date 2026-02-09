@@ -11,6 +11,7 @@ export interface IJournalRepository {
   getById(id: string): IJournalEntry;
   getAll(): IJournalEntry[];
   replaceById(id: string, content: string): IJournalEntry;
+  patchById(id: string, content: string): IJournalEntry;
 }
 
 class JournalRepository implements IJournalRepository {
@@ -45,6 +46,10 @@ class JournalRepository implements IJournalRepository {
       }
     }
     throw new Error(`Journal entry with id ${id} not found`);
+  }
+
+  patchById(id: string, content: string): IJournalEntry {
+    return this.replaceById(id, content);
   }
 }
 

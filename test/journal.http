@@ -21,3 +21,9 @@ PUT http://localhost:3000/api/entries/1
 Content-Type: application/json
 
 { "content": "Updated via PUT" }
+
+### Step 9 checkpoint: PUT remains functional before PATCH route
+PUT http://localhost:3000/api/entries/1
+Content-Type: application/json
+
+{ "content": "PUT still works" }

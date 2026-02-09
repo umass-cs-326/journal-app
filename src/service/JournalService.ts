@@ -12,6 +12,7 @@ export interface IJournalService {
   getEntry(id: string): IJournalEntry;
   getEntries(): IJournalEntry[];
   replaceEntry(id: string, content: string): IJournalEntry;
+  patchEntry(id: string, content: string): IJournalEntry;
 }
 
 class JournalService implements IJournalService {
@@ -31,6 +32,10 @@ class JournalService implements IJournalService {
 
   replaceEntry(id: string, content: string): IJournalEntry {
     return this.repository.replaceById(id, content);
+  }
+
+  patchEntry(id: string, content: string): IJournalEntry {
+    return this.repository.patchById(id, content);
   }
 }
 

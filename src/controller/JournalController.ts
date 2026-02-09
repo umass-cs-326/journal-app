@@ -8,6 +8,7 @@ export interface IJournalController {
   newEntryFromForm(res: Response, content: string): void;
   showAllEntries(res: Response): void;
   showEntry(res: Response, id: string): void;
+  showEditForm(res: Response, id: string): void;
   replaceEntry(res: Response, id: string, content: string): void;
   patchEntry(res: Response, id: string, content: string): void;
   deleteEntry(res: Response, id: string): void;
@@ -53,6 +54,17 @@ class JournalController implements IJournalController {
     if (entry) {
       html = `<h1>Journal Entry</h1><p>${entry.content}</p>`;
     }
+    res.send(html);
+  }
+
+  showEditForm(res: Response, id: string): void {
+    const entry = this.service.getEntry(id);
+    const html = `<h1>Edit Journal Entry</h1>
+      <p>This form uses POST because browser forms support GET/POST.</p>
+      <form action="/entries/${entry.id}/edit" method="POST">
+        <textarea name="content" rows="8" cols="60" required>${entry.content}</textarea>
+        <button type="submit">Save Changes</button>
+      </form>`;
     res.send(html);
   }
 

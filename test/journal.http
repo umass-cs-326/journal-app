@@ -48,3 +48,6 @@ GET http://localhost:3000/entries
 
 ### Step 14 verify DELETE end-to-end
 DELETE http://localhost:3000/api/entries/1
+
+### Step 15 checkpoint: entry read still works before edit route
+GET http://localhost:3000/entries/1

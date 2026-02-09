@@ -30,3 +30,9 @@ Content-Type: application/json
 
 ### Step 10 checkpoint: GET entry still works after PATCH controller
 GET http://localhost:3000/entries/1
+
+### Step 11 verify PATCH end-to-end
+PATCH http://localhost:3000/api/entries/1
+Content-Type: application/json
+
+{ "content": "Updated via PATCH" }

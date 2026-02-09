@@ -75,3 +75,14 @@ GET http://localhost:3000/entries/1
 
 ### Step 22 verify home links feature
 GET http://localhost:3000/
+
+### Step 23 teaching note
+### Browser forms support GET/POST only.
+### Use REST Client for PUT/PATCH/DELETE.
+
+### Step 23 quick method contrast checks
+GET http://localhost:3000/entries/1/edit
+PATCH http://localhost:3000/api/entries/1
+Content-Type: application/json
+
+{ "content": "Method contrast patch" }

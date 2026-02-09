@@ -42,3 +42,6 @@ PATCH http://localhost:3000/api/entries/1
 Content-Type: application/json
 
 { "content": "PATCH still works" }
+
+### Step 13 checkpoint: list endpoint still works after DELETE controller
+GET http://localhost:3000/entries

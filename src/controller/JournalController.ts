@@ -10,6 +10,7 @@ export interface IJournalController {
   showEntry(res: Response, id: string): void;
   replaceEntry(res: Response, id: string, content: string): void;
   patchEntry(res: Response, id: string, content: string): void;
+  deleteEntry(res: Response, id: string): void;
 }
 
 class JournalController implements IJournalController {
@@ -65,6 +66,17 @@ class JournalController implements IJournalController {
     this.logger.info(`Patching entry ${id} via PATCH`);
     const updated = this.service.patchEntry(id, content);
     res.json(updated);
+  }
+
+  deleteEntry(res: Response, id: string): void {
+    this.logger.info(`Deleting entry ${id}`);
+    const deleted = this.service.deleteEntry(id);
+    if (!deleted) {
+      this.logger.warn(`Delete failed for ${id}`);
+      res.status(404).json({ message: "Entry not found" });
+      return;
+    }
+    res.status(204).send();
   }
 }
 

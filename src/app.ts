@@ -74,6 +74,12 @@ export class ExpressApp implements IApp {
       this.controller.updateEntryFromForm(res, id, content);
     });
 
+    this.app.post("/entries/:id/delete", (req: Request, res: Response) => {
+      this.logger.info(`POST /entries/${req.params.id}/delete`);
+      const id = req.params.id as string;
+      this.controller.deleteEntry(res, id);
+    });
+
     this.app.put("/api/entries/:id", express.json(), (req, res) => {
       this.logger.info(`PUT /api/entries/${req.params.id}`);
       const id = req.params.id as string;

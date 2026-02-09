@@ -66,3 +66,6 @@ content=Edited+from+form
 
 ### Step 19 verify entry page includes edit link
 GET http://localhost:3000/entries/1
+
+### Step 20 verify POST delete form route
+POST http://localhost:3000/entries/1/delete

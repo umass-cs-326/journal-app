@@ -12,6 +12,7 @@ export interface IJournalRepository {
   getAll(): IJournalEntry[];
   replaceById(id: string, content: string): IJournalEntry;
   patchById(id: string, content: string): IJournalEntry;
+  deleteById(id: string): boolean;
 }
 
 class JournalRepository implements IJournalRepository {
@@ -50,6 +51,16 @@ class JournalRepository implements IJournalRepository {
 
   patchById(id: string, content: string): IJournalEntry {
     return this.replaceById(id, content);
+  }
+
+  deleteById(id: string): boolean {
+    for (let i = 0; i < this.entries.length; i += 1) {
+      if (this.entries[i].id === id) {
+        this.entries.splice(i, 1);
+        return true;
+      }
+    }
+    return false;
   }
 }
 

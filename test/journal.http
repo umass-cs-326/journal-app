@@ -36,3 +36,9 @@ PATCH http://localhost:3000/api/entries/1
 Content-Type: application/json
 
 { "content": "Updated via PATCH" }
+
+### Step 12 checkpoint: PATCH remains functional before DELETE route
+PATCH http://localhost:3000/api/entries/1
+Content-Type: application/json
+
+{ "content": "PATCH still works" }

@@ -69,3 +69,6 @@ GET http://localhost:3000/entries/1
 
 ### Step 20 verify POST delete form route
 POST http://localhost:3000/entries/1/delete
+
+### Step 21 verify entry page includes delete form
+GET http://localhost:3000/entries/1

@@ -55,6 +55,9 @@ class JournalController implements IJournalController {
     if (entry) {
       html = `<h1>Journal Entry</h1><p>${entry.content}</p>
         <p><a href="/entries/${entry.id}/edit">Edit Entry</a></p>
+        <form action="/entries/${entry.id}/delete" method="POST">
+          <button type="submit">Delete Entry</button>
+        </form>
         <p><a href="/entries">Back to Entries</a></p>`;
     }
     res.send(html);

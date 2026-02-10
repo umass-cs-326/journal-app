@@ -9,10 +9,13 @@ export interface IJournalController {
   showAllEntries(res: Response): void;
   showEntry(res: Response, id: string): void;
   showEditForm(res: Response, id: string): void;
+  showOpsConsole(res: Response): void;
   updateEntryFromForm(res: Response, id: string, content: string): void;
   replaceEntry(res: Response, id: string, content: string): void;
   patchEntry(res: Response, id: string, content: string): void;
+  patchEntryFromOps(res: Response, id: string, content: string): void;
   deleteEntry(res: Response, id: string): void;
+  deleteEntryFromOps(res: Response, id: string): void;
 }
 
 class JournalController implements IJournalController {
@@ -74,6 +77,11 @@ class JournalController implements IJournalController {
     res.send(html);
   }
 
+  showOpsConsole(res: Response): void {
+    this.logger.info("Rendering entry operations console");
+    res.sendFile("ops-form.html", { root: "static" });
+  }
+
   updateEntryFromForm(res: Response, id: string, content: string): void {
     this.logger.info(`Updating entry ${id} from form POST`);
     this.service.patchEntry(id, content);
@@ -88,8 +96,24 @@ class JournalController implements IJournalController {
 
   patchEntry(res: Response, id: string, content: string): void {
     this.logger.info(`Patching entry ${id} via PATCH`);
-    const updated = this.service.patchEntry(id, content);
-    res.json(updated);
+    try {
+      const updated = this.service.patchEntry(id, content);
+      res.json(updated);
+    } catch (error) {
+      this.logger.warn(`Patch failed for ${id}`);
+      res.status(404).json({ message: "Entry not found" });
+    }
+  }
+
+  patchEntryFromOps(res: Response, id: string, content: string): void {
+    this.logger.info(`Patching entry ${id} from ops console`);
+    try {
+      this.service.patchEntry(id, content);
+      res.redirect(`/entries/${id}`);
+    } catch (error) {
+      this.logger.warn(`Ops patch failed for ${id}`);
+      res.status(404).send("<h1>Entry not found</h1><p><a href=\"/entries/ops\">Back to ops console</a></p>");
+    }
   }
 
   deleteEntry(res: Response, id: string): void {
@@ -101,6 +125,17 @@ class JournalController implements IJournalController {
       return;
     }
     res.status(204).send();
+  }
+
+  deleteEntryFromOps(res: Response, id: string): void {
+    this.logger.info(`Deleting entry ${id} from ops console`);
+    const deleted = this.service.deleteEntry(id);
+    if (!deleted) {
+      this.logger.warn(`Ops delete failed for ${id}`);
+      res.status(404).send("<h1>Entry not found</h1><p><a href=\"/entries/ops\">Back to ops console</a></p>");
+      return;
+    }
+    res.redirect("/entries");
   }
 }
 

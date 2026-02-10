@@ -80,6 +80,24 @@ export class ExpressApp implements IApp {
       this.controller.deleteEntry(res, id);
     });
 
+    this.app.get("/entries/ops", (_req: Request, res: Response) => {
+      this.logger.info("[OPS] GET /entries/ops");
+      this.controller.showOpsConsole(res);
+    });
+
+    this.app.post("/entries/ops/patch", express.urlencoded({ extended: true }), (req: Request, res: Response) => {
+      this.logger.info("[OPS] POST /entries/ops/patch");
+      const id = req.body.id as string;
+      const content = req.body.content as string;
+      this.controller.patchEntryFromOps(res, id, content);
+    });
+
+    this.app.post("/entries/ops/delete", express.urlencoded({ extended: true }), (req: Request, res: Response) => {
+      this.logger.info("[OPS] POST /entries/ops/delete");
+      const id = req.body.id as string;
+      this.controller.deleteEntryFromOps(res, id);
+    });
+
     this.app.put("/api/entries/:id", express.json(), (req, res) => {
       this.logger.info(`PUT /api/entries/${req.params.id}`);
       const id = req.params.id as string;
@@ -88,14 +106,14 @@ export class ExpressApp implements IApp {
     });
 
     this.app.patch("/api/entries/:id", express.json(), (req, res) => {
-      this.logger.info(`PATCH /api/entries/${req.params.id}`);
+      this.logger.info(`[OPS] PATCH /api/entries/${req.params.id}`);
       const id = req.params.id as string;
       const content = req.body.content as string;
       this.controller.patchEntry(res, id, content);
     });
 
     this.app.delete("/api/entries/:id", (req: Request, res: Response) => {
-      this.logger.info(`DELETE /api/entries/${req.params.id}`);
+      this.logger.info(`[OPS] DELETE /api/entries/${req.params.id}`);
       const id = req.params.id as string;
       this.controller.deleteEntry(res, id);
     });

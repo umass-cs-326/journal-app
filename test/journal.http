@@ -1,92 +1,51 @@
-### Keep requests ordered by feature step:
-### baseline -> PUT slice -> PATCH slice -> DELETE slice -> GET/POST UI routes
-### and UI verification checkpoints.
-
-### Step 5 baseline: home
+### Entry Operations Console checklist
+### 1) Baseline: home and entries list
 GET http://localhost:3000/
 
-### Step 5 baseline: list entries
+### Baseline: list entries
 GET http://localhost:3000/entries
 
-### Step 5 baseline: create entry (form route)
+### 2) Create entry (form route)
 POST http://localhost:3000/entries/new
 Content-Type: application/x-www-form-urlencoded
 
 content=Baseline+entry
 
-### Step 6 checkpoint: existing GET still works after PUT internals
-GET http://localhost:3000/entries/1
-
-### Step 7 checkpoint: existing list still works after PUT controller
-GET http://localhost:3000/entries
-
-### Step 8 verify PUT end-to-end
-PUT http://localhost:3000/api/entries/1
-Content-Type: application/json
-
-{ "content": "Updated via PUT" }
-
-### Step 9 checkpoint: PUT remains functional before PATCH route
-PUT http://localhost:3000/api/entries/1
-Content-Type: application/json
-
-{ "content": "PUT still works" }
-
-### Step 10 checkpoint: GET entry still works after PATCH controller
-GET http://localhost:3000/entries/1
-
-### Step 11 verify PATCH end-to-end
+### 3) API patch success
 PATCH http://localhost:3000/api/entries/1
 Content-Type: application/json
 
-{ "content": "Updated via PATCH" }
+{ "content": "Updated via API PATCH" }
 
-### Step 12 checkpoint: PATCH remains functional before DELETE route
-PATCH http://localhost:3000/api/entries/1
+### 4) API patch not-found
+PATCH http://localhost:3000/api/entries/999
 Content-Type: application/json
 
-{ "content": "PATCH still works" }
+{ "content": "Missing entry" }
 
-### Step 13 checkpoint: list endpoint still works after DELETE controller
-GET http://localhost:3000/entries
-
-### Step 14 verify DELETE end-to-end
+### 5) API delete success
 DELETE http://localhost:3000/api/entries/1
 
-### Step 15 checkpoint: entry read still works before edit route
-GET http://localhost:3000/entries/1
+### 6) API delete not-found
+DELETE http://localhost:3000/api/entries/999
 
-### Step 16 verify GET edit form route
-GET http://localhost:3000/entries/1/edit
+### 7) Console page load
+GET http://localhost:3000/entries/ops
 
-### Step 17 checkpoint: GET edit still works before POST route
-GET http://localhost:3000/entries/1/edit
-
-### Step 18 verify POST edit route
-POST http://localhost:3000/entries/1/edit
+### 8) Create entry for form operations
+POST http://localhost:3000/entries/new
 Content-Type: application/x-www-form-urlencoded
 
-content=Edited+from+form
+content=Form+entry
 
-### Step 19 verify entry page includes edit link
-GET http://localhost:3000/entries/1
+### 9) Form patch check (POST + urlencoded body)
+POST http://localhost:3000/entries/ops/patch
+Content-Type: application/x-www-form-urlencoded
 
-### Step 20 verify POST delete form route
-POST http://localhost:3000/entries/1/delete
+id=2&content=Updated+via+ops+form
 
-### Step 21 verify entry page includes delete form
-GET http://localhost:3000/entries/1
+### 10) Form delete check (POST + urlencoded body)
+POST http://localhost:3000/entries/ops/delete
+Content-Type: application/x-www-form-urlencoded
 
-### Step 22 verify home links feature
-GET http://localhost:3000/
-
-### Step 23 teaching note
-### Browser forms support GET/POST only.
-### Use REST Client for PUT/PATCH/DELETE.
-
-### Step 23 quick method contrast checks
-GET http://localhost:3000/entries/1/edit
-PATCH http://localhost:3000/api/entries/1
-Content-Type: application/json
-
-{ "content": "Method contrast patch" }
+id=2

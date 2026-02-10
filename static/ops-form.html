@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Entry Operations Console</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Entry Operations Console</h1>
+      <p>Note: Browser forms support GET/POST only. These operations use POST.</p>
+
+      <section>
+        <h2>Patch Entry Content</h2>
+        <form action="/entries/ops/patch" method="POST">
+          <label for="patch-id">Entry ID</label>
+          <input id="patch-id" name="id" type="text" required />
+
+          <label for="patch-content">New Content</label>
+          <textarea id="patch-content" name="content" rows="6" cols="60" required></textarea>
+
+          <button type="submit">Patch Entry</button>
+        </form>
+      </section>
+
+      <section>
+        <h2>Delete Entry</h2>
+        <form action="/entries/ops/delete" method="POST">
+          <label for="delete-id">Entry ID</label>
+          <input id="delete-id" name="id" type="text" required />
+          <button type="submit">Delete Entry</button>
+        </form>
+      </section>
+    </main>
+  </body>
+</html>

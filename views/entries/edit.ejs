@@ -1,0 +1,6 @@
+<h1>Edit Journal Entry</h1>
+<p>This form uses POST because browser forms support GET/POST.</p>
+<form action="/entries/<%= entry.id %>/edit" method="POST">
+  <textarea name="content" rows="8" cols="60" required><%= entry.content %></textarea>
+  <button type="submit">Save Changes</button>
+</form>

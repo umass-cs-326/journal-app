@@ -1,0 +1,8 @@
+<h1>Journal Entry Not Found</h1>
+<% if (typeof message !== 'undefined') { %>
+  <p><%= message %></p>
+<% } %>
+<% if (typeof id !== 'undefined') { %>
+  <p>Entry id: <%= id %></p>
+<% } %>
+<p><a href="/entries">Back to Entries</a></p>

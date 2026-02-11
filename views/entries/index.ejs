@@ -1,0 +1,6 @@
+<h1>All Journal Entries</h1>
+<ul>
+  <% entries.forEach((entry) => { %>
+    <li><a href="/entries/<%= entry.id %>"><%= entry.content %></a></li>
+  <% }) %>
+</ul>

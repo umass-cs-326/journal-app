@@ -5,16 +5,20 @@ export interface ILoggingService {
 }
 
 class LoggingService implements ILoggingService {
+  private stamp(level: string, message: string): string {
+    return `${new Date().toISOString()} [${level}] ${message}`;
+  }
+
   info(message: string): void {
-    console.log(`[INFO] ${message}`);
+    console.log(this.stamp("INFO", message));
   }
 
   warn(message: string): void {
-    console.warn(`[WARN] ${message}`);
+    console.warn(this.stamp("WARN", message));
   }
 
   error(message: string): void {
-    console.error(`[ERROR] ${message}`);
+    console.error(this.stamp("ERROR", message));
   }
 }
 

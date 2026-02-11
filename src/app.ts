@@ -1,8 +1,7 @@
 import { IApp } from "./contracts";
-import express, { response } from "express";
-// We need these types to type our route handlers
+import express from "express";
 import { Request, Response } from "express";
-import { IJournalController } from './controller/JournalController';
+import { IJournalController } from "./controller/JournalController";
 import { ILoggingService } from "./service/LoggingService";
 
 /**
@@ -19,43 +18,43 @@ export class ExpressApp implements IApp {
     private readonly logger: ILoggingService
   ) {
     this.app = express();
-    // Register middleware and routes
     this.registerMiddleware();
     this.registerRoutes();
   }
 
   registerMiddleware(): void {
-    // Apply any global middleware here, e.g., logging, CORS, etc.
-    // Need this middleware to serve static files (CSS, JS, images, etc.)
     this.app.use(express.static("static"));
   }
 
   registerRoutes(): void {
     const controller = this.controller;
 
-    // Home route serving a simple HTML page
     this.app.get("/", (_req: Request, res: Response) => {
       this.logger.info("GET /");
       this.controller.showHome(res);
     });
 
-    // Route to show the form for a new journal entry
     this.app.get("/entries/new", (_req: Request, res: Response) =>
       controller.showEntryForm(res)
     );
 
-    // Route to handle form submission for a new journal entry
     this.app.post("/entries/new", express.urlencoded({ extended: true }), (req: Request, res: Response) => {
-      const content = req.body.content;
+      const raw = req.body.content;
+      const content = typeof raw === "string" ? raw.trim() : "";
+
+      if (!content) {
+        this.logger.warn("POST /entries/new rejected: content missing or empty");
+        res.status(400).send("Entry content is required.");
+        return;
+      }
+
       controller.newEntryFromForm(res, content);
     });
 
-    // Route to show all journal entries
     this.app.get("/entries", (_req: Request, res: Response) =>
       controller.showAllEntries(res)
     );
 
-    // Route to show a specific journal entry by ID
     this.app.get("/entries/:id", (req: Request, res: Response) => {
       const id = req.params.id as string;
       controller.showEntry(res, id);
@@ -106,10 +105,6 @@ export class ExpressApp implements IApp {
   }
 }
 
-/**
- * Helper used by tests and the server.
- * Keeping this as a function makes it easy to create a fresh app per test.
- */
-export const CreateApp = 
-  (controller: IJournalController, logger: ILoggingService): ExpressApp => 
+export const CreateApp =
+  (controller: IJournalController, logger: ILoggingService): ExpressApp =>
     new ExpressApp(controller, logger);

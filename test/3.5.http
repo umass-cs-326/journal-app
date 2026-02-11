@@ -1,0 +1,14 @@
+### Seed entry
+POST http://localhost:3000/entries/new
+Content-Type: application/x-www-form-urlencoded
+
+content=First+entry
+
+### Verify template-rendered page
+GET http://localhost:3000/entries/1
+
+### Verify validation failure maps to 400
+POST http://localhost:3000/entries/new
+Content-Type: application/x-www-form-urlencoded
+
+content=

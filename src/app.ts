@@ -1,15 +1,11 @@
+import path from "node:path";
 import { IApp } from "./contracts";
 import express from "express";
 import { Request, Response } from "express";
+import Layouts from "express-ejs-layouts";
 import { IJournalController } from "./controller/JournalController";
 import { ILoggingService } from "./service/LoggingService";
 
-/**
- * ExpressApp implements IApp.
- *
- * This file is the "composition root" for the application:
- * we create our objects and wire dependencies together here.
- */
 export class ExpressApp implements IApp {
   private readonly app: express.Express;
 
@@ -19,11 +15,19 @@ export class ExpressApp implements IApp {
   ) {
     this.app = express();
     this.registerMiddleware();
+    this.registerTemplating();
     this.registerRoutes();
   }
 
   registerMiddleware(): void {
     this.app.use(express.static("static"));
+    this.app.use(Layouts);
+  }
+
+  registerTemplating(): void {
+    this.app.set("view engine", "ejs");
+    this.app.set("views", path.join(process.cwd(), "views"));
+    this.app.set("layout", "layouts/base");
   }
 
   registerRoutes(): void {

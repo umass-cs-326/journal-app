@@ -20,5 +20,7 @@ Running through all of this is a deliberate verification narrative in `test/jour
 
 Please read the following documents. The `CONCEPTS.md` file provides an overview of the key concepts covered in this branch as well as links to required readings. The required readings are those items identified as `Readings`. The `CHANGES.md` file walks through the changes made in this branch, providing context and explanations for each step in the development process.
 
+You are required to read both of the documents below and only the links to readings identified in the `CONCEPTS.md` file as `Readings`. The other links are provided for reference and are not required reading. Naturally, it is expected that you will review the code in this branch and understand the implementation.
+
 - [CONCEPTS.md](CONCEPTS.md): An overview of the key concepts covered in this branch.
 - [CHANGES.md](CHANGES.md): A walkthrough of the changes made in this branch.

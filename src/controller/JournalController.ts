@@ -14,6 +14,7 @@ export interface IJournalController {
   replaceEntry(res: Response, id: string, content: string): void;
   patchEntry(res: Response, id: string, content: string): void;
   deleteEntry(res: Response, id: string): void;
+  deleteEntryFromForm(res: Response, id: string): void;
 }
 
 class JournalController implements IJournalController {
@@ -168,6 +169,24 @@ class JournalController implements IJournalController {
       return;
     }
     res.json(result.value);
+  }
+
+  deleteEntryFromForm(res: Response, id: string): void {
+    this.logger.info(`Deleting entry ${id} from form`);
+    const result = this.service.deleteEntry(id);
+    if (!result.ok && this.isJournalError(result.value) && result.value.name === "EntryNotFound") {
+      res.status(404).render("entries/not-found", { id, error: result.value });
+      return;
+    }
+    if (!result.ok && this.isJournalError(result.value)) {
+      res.status(500).render("entries/not-found", { id, error: result.value });
+      return;
+    }
+    if (!result.ok) {
+      res.status(500).render("entries/not-found", { id, message: "Unable to delete entry" });
+      return;
+    }
+    res.redirect("/entries");
   }
 
   deleteEntry(res: Response, id: string): void {

@@ -80,7 +80,7 @@ export class ExpressApp implements IApp {
     this.app.post("/entries/:id/delete", (req: Request, res: Response) => {
       this.logger.info(`POST /entries/${req.params.id}/delete`);
       const id = req.params.id as string;
-      this.controller.deleteEntry(res, id);
+      this.controller.deleteEntryFromForm(res, id);
     });
 
     this.app.put("/api/entries/:id", express.json(), (req, res) => {

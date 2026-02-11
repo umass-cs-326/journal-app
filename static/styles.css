@@ -1,39 +1,70 @@
-/* styles.css */
-/* Beginner-friendly CSS using only core concepts:
-   colors, fonts, spacing, borders, background, and simple layout */
-
 body {
   margin: 0;
-  padding: 40px;
-  font-family: Arial, Helvetica, sans-serif;
-  background-color: #0b0f1a; /* dark background */
-  color: #e6f1ff; /* light text */
+  padding: 24px;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #f5f7fb;
+  color: #1f2937;
 }
 
-/* Main title */
+main {
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.main-nav {
+  display: flex;
+  gap: 10px;
+  margin: 0 auto 20px;
+  max-width: 920px;
+}
+
 h1 {
-  margin-bottom: 20px;
-  padding: 16px;
-  font-size: 32px;
-  text-align: center;
-
-  color: #00ffff; /* neon cyan */
-  background-color: #141a33; /* dark panel */
-  border: 2px solid #ff2bd6; /* pink border */
-  border-radius: 8px;
+  margin: 0 0 16px;
+  font-size: 2rem;
+  color: #0f172a;
 }
 
-/* Description text */
-p {
-  max-width: 600px;
-  margin: 0 auto; /* center horizontally */
-  padding: 16px;
-
-  font-size: 18px;
+p,
+li,
+label,
+a,
+button,
+textarea {
+  font-size: 1rem;
   line-height: 1.5;
+}
 
-  background-color: #11162a;
-  border: 2px solid #00ffff;
+ul {
+  padding-left: 20px;
+}
+
+textarea {
+  width: min(100%, 700px);
+  border: 1px solid #cbd5e1;
   border-radius: 8px;
-  color: #cfd9ff;
+  padding: 10px;
+  margin-bottom: 12px;
+}
+
+button,
+.button-link,
+.main-nav a {
+  display: inline-block;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  text-decoration: none;
+  background: #2563eb;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+button:hover,
+.button-link:hover,
+.main-nav a:hover {
+  background: #1d4ed8;
+}
+
+a {
+  color: #2563eb;
 }

@@ -43,12 +43,12 @@ class JournalController implements IJournalController {
 
   showHome(res: Response): void {
     this.logger.info("Rendering home page");
-    res.sendFile("journal.html", { root: "static" });
+    res.render("home");
   }
 
   showEntryForm(res: Response): void {
     this.logger.info("Rendering new entry form");
-    res.sendFile("entry-form.html", { root: "static" });
+    res.render("entries/new");
   }
 
   newEntryFromForm(res: Response, content: string): void {
@@ -79,70 +79,53 @@ class JournalController implements IJournalController {
   showAllEntries(res: Response): void {
     this.logger.info("Listing all journal entries");
     const result = this.service.getEntries();
-    if (!result.ok && this.isJournalError(result.value)) {
-      res.status(this.mapErrorStatus(result.value)).send(result.value.message);
-      return;
-    }
     if (!result.ok) {
-      res.status(500).send("Unable to list entries");
+      if (this.isJournalError(result.value)) {
+        res.status(500).render("entries/not-found", { message: result.value.message });
+      } else {
+        res.status(500).render("entries/not-found", { message: "Unable to list entries" });
+      }
       return;
     }
 
-    const entries = result.value;
-    let html = "<h1>All Journal Entries</h1><ul>";
-    for (const entry of entries) {
-      html += `<li><a href="/entries/${entry.id}">${entry.content}</a></li>`;
-    }
-    html += "</ul>";
-    res.send(html);
+    res.render("entries/index", { entries: result.value });
   }
 
   showEntry(res: Response, id: string): void {
     this.logger.info(`Showing entry ${id}`);
     const result = this.service.getEntry(id);
     if (!result.ok && this.isJournalError(result.value) && result.value.name === "EntryNotFound") {
-      res.status(404).send("<h1>Journal Entry Not Found</h1>");
+      res.status(404).render("entries/not-found", { id, error: result.value });
       return;
     }
     if (!result.ok && this.isJournalError(result.value)) {
-      res.status(this.mapErrorStatus(result.value)).send(result.value.message);
+      res.status(500).render("entries/not-found", { id, error: result.value });
       return;
     }
     if (!result.ok) {
-      res.status(500).send("Unable to load entry.");
+      res.status(500).render("entries/not-found", { id, message: "Unable to load entry" });
       return;
     }
 
-    const entry = result.value;
-    const html = `<h1>Journal Entry</h1><p>${entry.content}</p>
-      <p><a href="/entries/${entry.id}/edit">Edit Entry</a></p>
-      <form action="/entries/${entry.id}/delete" method="POST">
-        <button type="submit">Delete Entry</button>
-      </form>
-      <p><a href="/entries">Back to Entries</a></p>`;
-
-    res.send(html);
+    res.render("entries/show", { entry: result.value });
   }
 
   showEditForm(res: Response, id: string): void {
     const result = this.service.getEntry(id);
+    if (!result.ok && this.isJournalError(result.value) && result.value.name === "EntryNotFound") {
+      res.status(404).render("entries/not-found", { id, error: result.value });
+      return;
+    }
     if (!result.ok && this.isJournalError(result.value)) {
-      res.status(this.mapErrorStatus(result.value)).send(result.value.message);
+      res.status(500).render("entries/not-found", { id, error: result.value });
       return;
     }
     if (!result.ok) {
-      res.status(500).send("Unable to load edit form");
+      res.status(500).render("entries/not-found", { id, message: "Unable to load edit form" });
       return;
     }
 
-    const entry = result.value;
-    const html = `<h1>Edit Journal Entry</h1>
-      <p>This form uses POST because browser forms support GET/POST.</p>
-      <form action="/entries/${entry.id}/edit" method="POST">
-        <textarea name="content" rows="8" cols="60" required>${entry.content}</textarea>
-        <button type="submit">Save Changes</button>
-      </form>`;
-    res.send(html);
+    res.render("entries/edit", { entry: result.value });
   }
 
   updateEntryFromForm(res: Response, id: string, content: string): void {

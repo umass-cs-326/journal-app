@@ -4,6 +4,7 @@ import { IJournalService } from '../service/JournalService';
 export interface IJournalController {
   showHome(res: Response): void;
   showEntryForm(res: Response): void;
+  showSearchForm(res: Response): void;
   newEntryFromForm(res: Response, content: string): void;
   showAllEntries(res: Response): void;
   showEntry(res: Response, id: string): void;
@@ -18,6 +19,10 @@ class JournalController implements IJournalController {
 
   showEntryForm(res: Response): void {
     res.sendFile("entry-form.html", { root: "static" });
+  }
+
+  showSearchForm(res: Response): void {
+    res.sendFile("search-form.html", { root: "static" });
   }
 
   newEntryFromForm(res: Response, content: string): void {
@@ -36,10 +41,10 @@ class JournalController implements IJournalController {
   }
 
   showEntry(res: Response, id: string): void {
-    let html = "<h1>Journal Entry Not Found</h1>";
+    let html = '<h1>Journal Entry Not Found</h1><a href="/entries/search">Back to Search</a>';
     const entry = this.service.getEntry(id);
     if (entry) {
-      html = `<h1>Journal Entry</h1><p>${entry.content}</p>`;
+      html = `<h1>Journal Entry</h1><p>${entry.content}</p><a href="/entries/search">Back to Search</a>`;
     }
     res.send(html);
   }

@@ -30,6 +30,7 @@ export class ExpressApp implements IApp {
     // Required because of how 'this' works in JS/TS
     const showHome = (res: Response) => this.controller.showHome(res);
     const showEntryForm = (res: Response) => this.controller.showEntryForm(res);
+    const showSearchForm = (res: Response) => this.controller.showSearchForm(res);
     const newEntryFromForm = (res: Response, content: string) =>
       this.controller.newEntryFromForm(res, content);
     const showAllEntries = (res: Response) => this.controller.showAllEntries(res);
@@ -48,6 +49,17 @@ export class ExpressApp implements IApp {
     this.app.post("/entries/new", express.urlencoded({ extended: true }), (req: Request, res: Response) => {
       const content = req.body.content;
       newEntryFromForm(res, content);
+    });
+
+    // Route to show the form for searching a journal entry by ID
+    this.app.get("/entries/search", (_req: Request, res: Response) =>
+      showSearchForm(res)
+    );
+
+    // Route to handle form submission for searching a journal entry by ID
+    this.app.post("/entries/search", express.urlencoded({ extended: true }), (req: Request, res: Response) => {
+      const id = req.body.id;
+      res.redirect(`/entries/${id}`);
     });
 
     // Route to show all journal entries

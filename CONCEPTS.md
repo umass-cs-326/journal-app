@@ -1,167 +1,184 @@
-# Logging, Methods, and Forms in an Express Journal App
+# Lecture 3.5 Concepts: Results, Errors, Validation, and Template-Driven Rendering
 
 ## Overview
 
-In this lecture we wire a shared logger through our app, expand our HTTP surface area with PUT, PATCH, and DELETE, and round out the UI with edit and delete forms that respect browser constraints. Along the way we practice Express routing and middleware, use TypeScript interfaces and modules to keep boundaries explicit, and build out repository and service layers that make our domain logic easier to grow and test. The result is a journal app that reads like a story: clear routes, deliberate HTTP semantics, and a test script that keeps each step verifiable.
+In this lecture we shift the journal app from implicit error behavior to explicit, typed outcomes, and then use that stronger contract to improve validation, controller decisions, and user-facing responses. We also move HTML generation out of controllers and into EJS templates with a shared layout, which gives us cleaner separation of concerns and makes UI evolution faster. The final steps align tests and dependencies with these architectural changes so the whole system remains coherent.
 
 ## Big Picture
 
-In a full web application, the backend defines routes and request handling while the frontend provides navigable pages and forms; the two sides meet through HTTP methods, status codes, and payload formats. By adding logging, we make the backend observable; by expanding HTTP methods, we make the API expressive; and by adding HTML forms and links, we make the UI usable without special tooling, all while keeping the code modular through interfaces and layered patterns. These moves are small individually, but together they mirror how real systems grow: clear boundaries, intentional protocols, and testable behavior that scales from development to production.
+A web request starts at the route boundary, then flows into the controller, service, and repository before a response is produced. In this iteration, each layer has a clearer job: routes validate raw request shape, services enforce business constraints, repositories return typed data outcomes, and controllers map outcomes to HTTP responses and rendered views. On the frontend side, server-rendered EJS templates and shared layout structure provide consistent presentation, while CSS updates improve readability and navigation behavior. Together, these changes make backend correctness and frontend usability reinforce each other.
 
 ## Concepts List
 
-- Express routing with app.METHOD handlers
-- HTTP methods and their semantics (GET, POST, PUT, PATCH, DELETE)
-- Express middleware and body parsing (express.json, express.urlencoded)
-- Request data sources (req.params, req.body)
-- Response construction (res.send, res.json, res.status, res.sendFile, res.redirect)
-- HTTP status codes (200, 204, 404)
-- Static file serving (express.static)
-- HTML forms: method and enctype constraints
-- TypeScript interfaces (contracts for services/controllers)
-- TypeScript modules (import/export boundaries)
-- Repository pattern (data access abstraction)
-- Service layer pattern (business logic boundary)
-- Dependency injection and composition root
-- Singleton pattern for shared services
-- Logging with Node.js console
-- API verification via scripted HTTP requests
+- `Result<T, E>` and explicit success/failure returns
+- Discriminated unions for domain modeling
+- Domain-specific error taxonomy (`JournalError`)
+- Layered validation (defense in depth)
+- Route-boundary input validation
+- Service-level business rule enforcement
+- Repository-level failure signaling without exceptions
+- Controller error-to-HTTP mapping
+- Type guards and safe narrowing in TypeScript
+- Structured logging with timestamps
+- Server-side rendering with EJS
+- Layout reuse and shared navigation shell
+- Controller/view separation via `res.render(...)`
+- Form workflow semantics (redirect vs API-style response)
+- HTTP regression tests with `.http` scenario files
+- Dependency and type package alignment
 
-## Express Routing with app.METHOD Handlers
+## `Result<T, E>` and explicit success/failure returns
 
-Express routing maps HTTP methods and paths to handler functions, letting us define separate behaviors for GET, POST, PUT, PATCH, and DELETE endpoints while keeping the app readable. This is the backbone for wiring UI routes, API routes, and our edit/delete form flows. Why: route-level clarity keeps the application structure predictable and makes it easy to add new behaviors without tangled conditionals. Used in Step 1, Step 5, Step 9, Step 12, Step 15, Step 17, Step 19, and Step 21.
+`Result<T, E>` models outcomes as data (`Ok` or `Err`) instead of relying on exceptions for expected failures, which makes control flow easier to reason about and test. This pattern lets every caller handle success and failure explicitly, and it clarifies which errors are part of normal business behavior. Why: We choose explicit result values over thrown exceptions here because invalid user input and not-found cases are routine outcomes, not exceptional crashes. Used in Step 1, Step 3, Step 4, Step 6.
 
-Reference:
+References:
+
+- https://www.typescriptlang.org/docs/handbook/2/narrowing.html
+- https://fsharpforfunandprofit.com/posts/recipe-part2/
+
+## Discriminated unions for domain modeling
+
+A discriminated union is a union type with a stable tag field (`name`) that enables precise branching on known variants. In this lecture, the `JournalError` union gives us strongly typed error variants that are easy to inspect and map consistently. Why: We choose discriminated unions because they encode valid error states directly in the type system, reducing ambiguity and missed cases. Used in Step 2, Step 6.
+
+References:
+
+- https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions
+- https://www.typescriptlang.org/docs/handbook/unions-and-intersections.html
+
+## Domain-specific error taxonomy (`JournalError`)
+
+A domain error taxonomy defines the set of meaningful failures for the application domain, such as `EntryNotFound`, `InvalidContent`, and `ValidationError`. This gives every layer shared language for failure semantics and enables consistent HTTP mapping and messaging. Why: We choose named domain errors over generic `Error` messages so handling can be deterministic and tied to product behavior. Used in Step 2, Step 3, Step 4, Step 6, Step 12.
+
+Required Reading:
+
+- https://martinfowler.com/articles/replaceThrowWithNotification.html
+
+References:
+
+- https://learn.microsoft.com/en-us/azure/architecture/best-practices/api-design
+
+## Layered validation (defense in depth)
+
+Layered validation means we intentionally validate at multiple boundaries rather than trusting one layer to catch everything. Routes guard request shape, services guard business rules, repositories guard persistence constraints, and controllers enforce response semantics. Why: We choose layered validation because each layer sees different context, and overlapping checks reduce the chance of invalid state propagation. Used in Step 3, Step 4, Step 5, Step 6.
+
+References:
+
+- https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html
+
+## Route-boundary input validation
+
+Route-boundary validation checks raw transport data before deeper business logic runs, including presence/type checks and normalization. Here, the POST route trims content, rejects empty values, logs a warning, and returns `400` immediately. Why: We choose early boundary rejection to fail fast, reduce downstream complexity, and provide immediate client feedback. Used in Step 5.
+
+References:
 
 - https://expressjs.com/en/guide/routing.html
+- https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
 
-## HTTP Methods and Their Semantics
+## Service-level business rule enforcement
 
-HTTP methods describe intent: GET retrieves, POST submits, PUT replaces, PATCH modifies, and DELETE removes, which is exactly the range we add to the journal API. Using the correct method keeps our API self-describing and aligns client expectations with server behavior. Why: method semantics encode meaning that tools, caches, and other developers rely on. Used in Step 5, Step 9, Step 12, Step 15, Step 19, Step 21, and Step 24.
+Service-level validation enforces domain rules that should remain true regardless of who calls the service. In this lecture, content normalization and max-length limits are enforced in `createEntry` and returned as typed errors. Why: We choose service-level enforcement so business rules are centralized and reusable across routes, controllers, and tests. Used in Step 4.
 
-Reading:
+Required Reading:
 
-- https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Methods
+- https://martinfowler.com/eaaCatalog/serviceLayer.html
+- https://en.wikipedia.org/wiki/Business_rule
 
-## Express Middleware and Body Parsing
+## Repository-level failure signaling without exceptions
 
-Express middleware like express.json and express.urlencoded parses incoming request bodies into req.body so our handlers can read JSON and form submissions safely, while express.static serves static assets from a directory. These middleware functions are built into Express and are the standard way to prepare request data for route handlers. Why: middleware keeps parsing and static serving consistent and reusable, instead of duplicating logic per route. Used in Step 1, Step 9, Step 12, Step 19, and Step 23.
+Repository methods now return `Result` values so not-found and validation-adjacent issues are represented as normal outcomes. This removes throw-based flow for expected misses and keeps data access behavior aligned with the rest of the typed error model. Why: We choose returned error values because repository misses are part of routine CRUD behavior and should be handled predictably. Used in Step 3.
 
-Reference:
-
-- https://expressjs.com/en/guide/using-middleware
-- https://expressjs.com/en/4x/api.html
-
-## Request Data Sources: req.params and req.body
-
-Express exposes route parameters via req.params and body data via req.body, which lets us read entry IDs from URLs and content from JSON or form submissions. These are the primary inputs that drive updates, patches, and deletions in the journal app. Why: separating URL parameters from body payloads clarifies which data identifies a resource and which data modifies it. Used in Step 1, Step 9, Step 12, Step 15, Step 17, Step 19, and Step 21.
-
-Reference:
-
-- https://expressjs.com/en/guide/routing.html
-- https://expressjs.com/en/4x/api.html
-
-## Response Construction: res.send, res.json, res.status, res.sendFile, res.redirect
-
-Express response helpers let us send HTML (res.send), JSON (res.json), status codes (res.status), static files (res.sendFile), and redirects (res.redirect) in a consistent way. We lean on these methods to return entry pages, API responses, edit forms, and redirect after form submissions. Why: expressive response helpers make server intent obvious and avoid low-level header manipulation. Used in Step 1, Step 8, Step 12, Step 14, Step 16, Step 18, and Step 23.
-
-Reference:
-
-- https://expressjs.com/en/4x/api.html
-
-## HTTP Status Codes (200, 204, 404)
-
-HTTP status codes communicate outcome: 200 for success with a response body, 204 for success without content (useful after DELETE), and 404 for missing resources. We use these to make API responses precise and predictable. Why: consistent status codes help clients and tests interpret outcomes correctly without guessing. Used in Step 14.
-
-Reference:
-
-- https://developer.mozilla.org/docs/Web/HTTP/Reference/Status
-- https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/204
-
-## Static File Serving
-
-Static file serving lets Express deliver HTML files directly from a directory using express.static, which is how the home page and other static assets are exposed. This keeps simple pages lightweight while still living inside the same server. Why: static serving separates templated/server-generated content from simple assets and keeps request handling minimal. Used in Step 23.
-
-Reference:
-
-- https://expressjs.com/en/guide/using-middleware
-- https://expressjs.com/en/starter/static-files
-- https://expressjs.com/en/4x/api.html
-
-## HTML Forms: Method and Enctype Constraints
-
-HTML forms only submit using GET or POST and default to application/x-www-form-urlencoded when method is POST, which is why we build POST-based edit and delete routes. This browser constraint shapes our UI-side flows even when the API supports PUT/PATCH/DELETE. Why: understanding form constraints helps us design routes that work in a real browser without extra tooling. Used in Step 16, Step 19, Step 21, and Step 24.
-
-Reference:
-
-- https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/form
-
-## TypeScript Interfaces
-
-TypeScript interfaces describe the shape of objects and provide contracts for components like logging services, repositories, and controllers, without coupling code to concrete implementations. This keeps our codebase refactor-friendly and type-safe as we evolve behavior. Why: interfaces let us define expectations up front so that changes are safer and clearer. Used in Step 2, Step 7, Step 8, Step 10, and Step 13.
-
-Reading:
-
-- https://www.typescriptlang.org/docs/handbook/interfaces
-
-## TypeScript Modules (import/export)
-
-TypeScript modules use import and export to share code across files while keeping module scope isolated, which is how we wire services and controllers together cleanly. This allows the app to grow without turning into a single giant file. Why: explicit module boundaries make dependencies visible and easier to reason about. Used in Step 2, Step 3, Step 4, Step 7, and Step 8.
-
-Reading:
-
-- https://www.typescriptlang.org/docs/handbook/2/modules.html
-
-## Repository Pattern
-
-A repository mediates between the domain and data mapping layers using a collection-like interface, hiding persistence details and centralizing data operations. Our in-memory journal repository follows this idea when we add replace, patch, and delete behaviors. Why: a repository isolates storage concerns so the rest of the app can evolve without rewriting data access. Used in Step 7, Step 10, and Step 13.
-
-Reading:
+Required Reading:
 
 - https://martinfowler.com/eaaCatalog/repository.html
-- https://www.geeksforgeeks.org/system-design/repository-design-pattern/
 
-## Service Layer Pattern
+References:
 
-A service layer organizes business logic into a dedicated boundary, so controllers can stay focused on HTTP concerns while services coordinate domain actions. Our journal service exposes create, replace, patch, and delete as a coherent interface for controllers. Why: separating service logic reduces coupling and keeps controllers lean. Used in Step 7, Step 10, and Step 13.
+- https://www.typescriptlang.org/docs/handbook/2/functions.html
 
-Reading:
+## Controller error-to-HTTP mapping
 
-- https://en.wikipedia.org/wiki/Service_layer_pattern
+Controller mapping translates domain outcomes into HTTP status codes and response shapes. In this lecture, `EntryNotFound` maps to `404`, validation issues map to `400`, and unknown/internal issues map to `500`. Why: We choose centralized mapping in the controller so transport concerns stay out of domain logic and remain consistent across endpoints. Used in Step 6, Step 11, Step 12.
 
-## Dependency Injection and Composition Root
+References:
 
-Dependency injection provides dependencies from the outside instead of constructing them inside a class, which is why we pass the logger and services into app and controller constructors. We assemble those dependencies at a single composition point in the server setup. Why: injection makes components testable and keeps construction concerns out of business logic. Used in Step 3 and Step 4.
+- https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
+- https://expressjs.com/en/guide/error-handling.html
 
-Reading:
+## Type guards and safe narrowing in TypeScript
 
-- https://en.wikipedia.org/wiki/Dependency_injection (Overview and Roles sections)
+A type guard is a runtime check that narrows a broad type into a specific known type branch. The `isJournalError` helper prevents unsafe property access and allows controller logic to branch with confidence. Why: We choose explicit guards because external and unioned values can be unknown at runtime, and narrowing preserves safety. Used in Step 6, Step 11, Step 12.
 
-## Singleton Pattern for Shared Services
+References:
 
-The singleton pattern restricts a class to a single instance and provides a global access point to it, which matches our shared logging service factory. This ensures every part of the app logs through the same object. Why: a singleton keeps shared infrastructure consistent and avoids duplicate state. Used in Step 2.
+- https://www.typescriptlang.org/docs/handbook/2/narrowing.html#using-type-predicates
+- https://www.typescriptlang.org/docs/handbook/2/narrowing.html
 
-Reading:
+## Structured logging with timestamps
 
-- https://en.wikipedia.org/wiki/Singleton_pattern (Overview and Common Uses sections)
+Structured logging adds consistent machine-readable context to log lines, including timestamp and log level. By stamping logs with ISO timestamps, we can sequence events and debug request flows more reliably. Why: We choose timestamped formatting so runtime behavior can be analyzed over time, not just as isolated messages. Used in Step 7.
 
-## Logging with Node.js Console
+Required Reading:
 
-Node.js provides console.log, console.warn, and console.error as a simple debugging console, which we wrap in a logging service for consistent app messages. These methods write to standard output/error streams, giving us immediate visibility into route and controller activity. Why: structured logging makes it easier to trace behavior as features grow. Used in Step 2, Step 4, and Step 5.
+- https://12factor.net/logs
 
-Reference:
+References:
 
-- https://nodejs.org/download/release/v8.10.0/docs/api/console.html
+- https://nodejs.org/api/console.html
 
-## API Verification via Scripted HTTP Requests
+## Server-side rendering with EJS
 
-Scripted HTTP requests let us verify endpoints incrementally by exercising specific methods and checking responses, mirroring how clients interact with the API. This keeps the timeline in CHANGES.md testable at every step and emphasizes protocol correctness. Why: reliable verification prevents regressions as we add routes and behaviors. Used in Step 2, Step 6, Step 9, Step 12, Step 15, Step 17, Step 19, Step 21, Step 24, and Step 25.
+Server-side rendering with EJS lets the server render HTML templates using runtime data before sending responses. This removes brittle string-built HTML in controllers and supports conditional rendering and loops in templates. Why: We choose EJS here because it integrates directly with Express and is straightforward for introducing templating concepts. Used in Step 8, Step 9, Step 10, Step 11, Step 15.
 
-Reference:
+References:
 
-- https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Methods
-- https://developer.mozilla.org/docs/Web/HTTP/Reference/Status
+- https://ejs.co/
+- https://expressjs.com/en/guide/using-template-engines.html
+
+## Layout reuse and shared navigation shell
+
+A shared layout wraps page-specific content in common structure (head, nav, stylesheet links), avoiding duplication. Using `express-ejs-layouts` plus `views/layouts/base` keeps cross-page updates centralized. Why: We choose a base layout so navigation and styling are consistent and easier to change in one place. Used in Step 8, Step 9, Step 10.
+
+References:
+
+- https://expressjs.com/en/starter/static-files.html
+
+## Controller/view separation via `res.render(...)`
+
+`res.render(...)` shifts presentation details into view files and keeps controllers focused on orchestration and decision logic. This improves readability, testability, and long-term maintainability compared to inline HTML concatenation. Why: We choose render-based responses because separation of concerns reduces coupling between HTTP flow and markup details. Used in Step 11, Step 15.
+
+References:
+
+- https://expressjs.com/en/api.html#res.render
+
+## Form workflow semantics (redirect vs API-style response)
+
+Form endpoints and API endpoints often need different response behavior even when they trigger similar business actions. This lecture introduces a form-specific delete path that redirects after success while preserving API semantics elsewhere. Why: We choose separate handlers so user-facing browser flows can use redirect-based UX patterns without distorting API contracts. Used in Step 12.
+
+Required Reading:
+
+- https://en.wikipedia.org/wiki/Post/Redirect/Get
+
+References:
+
+- https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections
+
+## HTTP regression tests with `.http` scenario files
+
+HTTP scenario files capture repeatable request sequences to verify behavior after architecture changes. The lecture adds tests that confirm template output routes still work and validation failures return the expected status. Why: We choose focused HTTP scenarios because they validate end-to-end behavior at the protocol boundary where user impact is visible. Used in Step 14.
+
+References:
+
+- https://www.rfc-editor.org/rfc/rfc9110
+- https://www.jetbrains.com/help/idea/http-client-in-product-code-editor.html
+
+## Dependency and type package alignment
+
+When runtime libraries are added, matching type packages are often needed for TypeScript correctness and editor support. The final step adds `@types/express-ejs-layouts` to align compile-time typing with runtime template middleware usage. Why: We choose explicit type dependency alignment to prevent drift between runtime behavior and static analysis. Used in Step 8, Step 16.
+
+References:
+
+- https://www.typescriptlang.org/docs/handbook/declaration-files/consumption.html
 
 ## Conclusion
 
-We used a tight set of concepts to grow the app safely: Express routing and middleware make HTTP behavior explicit, TypeScript interfaces and modules keep boundaries clear, and layered patterns (repository, service, DI, singleton) keep responsibilities separated. On top of that, proper HTTP semantics, status codes, and form constraints let the UI and API work together predictably, while logging and scripted checks keep the system observable and verifiable. Together these concepts give us a journal app that is easier to understand, easier to test, and ready to evolve.
+These concepts matter because they convert a working app into a more teachable and maintainable system: typed results clarify control flow, typed errors clarify failure intent, layered validation protects system boundaries, and controller mapping makes HTTP outcomes explicit. By combining these backend practices with template-based rendering, shared layout reuse, and targeted HTTP checks, we improve both developer ergonomics and user experience while keeping behavior easier to reason about across the full request/response lifecycle.

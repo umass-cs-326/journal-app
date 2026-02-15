@@ -45,7 +45,7 @@ export class ExpressApp implements IApp {
 
     this.app.get(
       '/',
-      asyncHandler(async (_req: Request, res: Response) => {
+      asyncHandler(async (_req, res) => {
         this.logger.info('GET /')
         await this.controller.showHome(res)
       }),
@@ -53,7 +53,7 @@ export class ExpressApp implements IApp {
 
     this.app.get(
       '/entries/new',
-      asyncHandler(async (_req: Request, res: Response) => {
+      asyncHandler(async (_req, res) => {
         await controller.showEntryForm(res)
       }),
     )
@@ -61,7 +61,7 @@ export class ExpressApp implements IApp {
     this.app.post(
       '/entries/new',
       express.urlencoded({ extended: true }),
-      asyncHandler(async (req: Request, res: Response) => {
+      asyncHandler(async (req, res) => {
         const raw = req.body.content
         const content = typeof raw === 'string' ? raw.trim() : ''
 
@@ -79,14 +79,14 @@ export class ExpressApp implements IApp {
 
     this.app.get(
       '/entries',
-      asyncHandler(async (_req: Request, res: Response) => {
+      asyncHandler(async (_req, res) => {
         await controller.showAllEntries(res)
       }),
     )
 
     this.app.get(
       '/entries/:id',
-      asyncHandler(async (req: Request, res: Response) => {
+      asyncHandler(async (req, res) => {
         const id = req.params.id as string
         await controller.showEntry(res, id)
       }),
@@ -94,7 +94,7 @@ export class ExpressApp implements IApp {
 
     this.app.get(
       '/entries/:id/edit',
-      asyncHandler(async (req: Request, res: Response) => {
+      asyncHandler(async (req, res) => {
         this.logger.info(`GET /entries/${req.params.id}/edit`)
         const id = req.params.id as string
         await this.controller.showEditForm(res, id)
@@ -104,7 +104,7 @@ export class ExpressApp implements IApp {
     this.app.post(
       '/entries/:id/edit',
       express.urlencoded({ extended: true }),
-      asyncHandler(async (req: Request, res: Response) => {
+      asyncHandler(async (req, res) => {
         this.logger.info(`POST /entries/${req.params.id}/edit`)
         const id = req.params.id as string
         const content = req.body.content as string
@@ -114,7 +114,7 @@ export class ExpressApp implements IApp {
 
     this.app.post(
       '/entries/:id/delete',
-      asyncHandler(async (req: Request, res: Response) => {
+      asyncHandler(async (req, res) => {
         this.logger.info(`POST /entries/${req.params.id}/delete`)
         const id = req.params.id as string
         await this.controller.deleteEntryFromForm(res, id)
@@ -145,7 +145,7 @@ export class ExpressApp implements IApp {
 
     this.app.delete(
       '/api/entries/:id',
-      asyncHandler(async (req: Request, res: Response) => {
+      asyncHandler(async (req, res) => {
         this.logger.info(`DELETE /api/entries/${req.params.id}`)
         const id = req.params.id as string
         await this.controller.deleteEntry(res, id)

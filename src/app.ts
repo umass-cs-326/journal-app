@@ -47,7 +47,7 @@ export class ExpressApp implements IApp {
       '/',
       asyncHandler((_req: Request, res: Response) => {
         this.logger.info('GET /')
-        this.controller.showHome(res)
+        return this.controller.showHome(res)
       }),
     )
 
@@ -73,7 +73,7 @@ export class ExpressApp implements IApp {
           return
         }
 
-        controller.newEntryFromForm(res, content)
+        return controller.newEntryFromForm(res, content)
       }),
     )
 
@@ -88,7 +88,7 @@ export class ExpressApp implements IApp {
       '/entries/:id',
       asyncHandler((req: Request, res: Response) => {
         const id = req.params.id as string
-        controller.showEntry(res, id)
+        return controller.showEntry(res, id)
       }),
     )
 
@@ -97,7 +97,7 @@ export class ExpressApp implements IApp {
       asyncHandler((req: Request, res: Response) => {
         this.logger.info(`GET /entries/${req.params.id}/edit`)
         const id = req.params.id as string
-        this.controller.showEditForm(res, id)
+        return this.controller.showEditForm(res, id)
       }),
     )
 
@@ -108,7 +108,7 @@ export class ExpressApp implements IApp {
         this.logger.info(`POST /entries/${req.params.id}/edit`)
         const id = req.params.id as string
         const content = req.body.content as string
-        this.controller.updateEntryFromForm(res, id, content)
+        return this.controller.updateEntryFromForm(res, id, content)
       }),
     )
 
@@ -117,7 +117,7 @@ export class ExpressApp implements IApp {
       asyncHandler((req: Request, res: Response) => {
         this.logger.info(`POST /entries/${req.params.id}/delete`)
         const id = req.params.id as string
-        this.controller.deleteEntryFromForm(res, id)
+        return this.controller.deleteEntryFromForm(res, id)
       }),
     )
 
@@ -128,7 +128,7 @@ export class ExpressApp implements IApp {
         this.logger.info(`PUT /api/entries/${req.params.id}`)
         const id = req.params.id as string
         const content = req.body.content as string
-        this.controller.replaceEntry(res, id, content)
+        return this.controller.replaceEntry(res, id, content)
       }),
     )
 
@@ -139,7 +139,7 @@ export class ExpressApp implements IApp {
         this.logger.info(`PATCH /api/entries/${req.params.id}`)
         const id = req.params.id as string
         const content = req.body.content as string
-        this.controller.patchEntry(res, id, content)
+        return this.controller.patchEntry(res, id, content)
       }),
     )
 
@@ -148,7 +148,7 @@ export class ExpressApp implements IApp {
       asyncHandler((req: Request, res: Response) => {
         this.logger.info(`DELETE /api/entries/${req.params.id}`)
         const id = req.params.id as string
-        this.controller.deleteEntry(res, id)
+        return this.controller.deleteEntry(res, id)
       }),
     )
   }

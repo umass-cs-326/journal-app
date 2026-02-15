@@ -1,31 +1,22 @@
-# Changes: 3.4-logging-and-http-method-expansion -> 3.5-results-errors-validation (Run 2026-02-12)
+# Changes: bb5c813 -> 4.6-asynchronous-execution-model (Run 2026-02-15)
 
 ## Git Comparison
-- Base branch: `3.4-logging-and-http-method-expansion`
-- Target branch: `3.5-results-errors-validation`
-- Latest target hash: `66bcd512cfdce07eedc4ce4b041056676c3f9ab1`
-- Comparison range: `3.4-logging-and-http-method-expansion..3.5-results-errors-validation`
+- Base branch: `bb5c813`
+- Target branch: `4.6-asynchronous-execution-model`
+- Latest target hash: `b13b78239bcee6da2174638b27537453f1489bea`
+- Comparison range: `bb5c813..4.6-asynchronous-execution-model`
 
 ## Commits Introduced on Target
-- `e682bc8` feat(result): add Result, Ok, and Err primitives
-- `156fb56` feat(errors): add typed JournalError domain model
-- `8cf7a77` refactor(repository): return Result from journal repository methods
-- `9757b7f` feat(service): add Result-based service contracts and validation
-- `cb970e8` feat(routes): validate form content at POST /entries/new boundary
-- `55a65c3` refactor(controller): map Result errors with safe type narrowing
-- `595bfea` refactor(logging): prepend timestamp to log output
-- `90768ee` chore(deps): add ejs and express-ejs-layouts
-- `d9f61ad` feat(app): configure ejs view engine and shared layouts
-- `f6ef323` feat(views): add base layout and entry templates
-- `28969c5` refactor(controller): render EJS templates for entry routes
-- `e9e04b5` feat(controller): separate form delete redirects from api delete semantics
-- `16e334a` feat(styles): modernize journal ui styling and controls
-- `e3d2bd2` test(http): add lecture 3.5 validation and template route checks
-- `0b95f38` refactor(ui): render home and new entry via ejs templates
-- `66bcd51` fix: update dependencies
+- `bb5c813` refactor: improve async error handling
+- `5ec517e` refactor: update JournalRepository methods to use Promises for async execution
+- `add41a1` refactor: update JournalController and JournalService methods to use Promises for async execution
+- `0f0210c` refactor: wrap route handlers in asyncHandler for improved error handling
+- `17020da` refactor: ensure controller methods return promises for consistent async handling
+- `edc4752` Make route handlers async for clarity
+- `b13b782` Simplify route handler type annotations
 
 ## Chapter Summary
-In this run, we move from exception-style control flow to a typed `Result<T, E>` model, then add a typed `JournalError` union so every layer can communicate failures explicitly. We apply validation in multiple layers (route, service, repository, and controller mapping), then shift UI rendering from inline HTML to EJS templates with a shared base layout and refreshed CSS. We finish by adding HTTP checks aligned to the new behavior and stabilizing dependencies for TypeScript + EJS layout typings.
+In this run, we set up a safe async path from the routes down to storage. We add a helper to catch async errors, then move the repository and service layers to Promises. We wrap routes with the helper, return the controller Promises, and finally make the handlers use async/await and simpler type annotations.
 
 ## Git Overview and Helpful Commands
 A git hash is the unique identifier for a snapshot commit. We can use hashes to inspect exactly what changed at each step.
@@ -41,81 +32,53 @@ A git hash is the unique identifier for a snapshot commit. We can use hashes to 
 
 ## Step-by-Step Timeline Walkthrough
 
-### Step 1. Establish Typed Success/Failure Primitives
-- Branch: `3.5-results-errors-validation`
-- Commit: `e682bc88ecbe0bbdc621e6ee17cef74eea94aeda`
-- Quick jump: `git checkout e682bc88ecbe0bbdc621e6ee17cef74eea94aeda`
+### Step 1. Add an Async Handler Helper
+- Branch: `4.6-asynchronous-execution-model`
+- Commit: `bb5c81325c24e0df967f3db50a82965d864df9cf`
+- Quick jump: `git checkout bb5c81325c24e0df967f3db50a82965d864df9cf`
 
-We introduce a reusable result contract so services and repositories can return structured outcomes without throwing.
+We add a small wrapper that lets route handlers return Promises and forwards errors to Express.
 
-Before (`src/lib/result.ts`, new file):
+Before (`src/app.ts:1-10`):
 ```ts
-// /dev/null
+import path from "node:path";
+import { IApp } from "./contracts";
+import express from "express";
+import { Request, Response } from "express";
+import Layouts from "express-ejs-layouts";
+import { IJournalController } from "./controller/JournalController";
+import { ILoggingService } from "./service/LoggingService";
 ```
 
-After (`src/lib/result.ts:1-14`):
+After (`src/app.ts:1-18`):
 ```ts
-export interface Ok<T> {
-  ok: true;
-  value: T;
-}
+import path from 'node:path'
+import { IApp } from './contracts'
+import express, { RequestHandler } from 'express'
+import { Request, Response } from 'express'
+import Layouts from 'express-ejs-layouts'
+import { IJournalController } from './controller/JournalController'
+import { ILoggingService } from './service/LoggingService'
 
-export interface Err<E> {
-  ok: false;
-  value: E;
-}
+// Type for async route handlers, which return a Promise
+type AsyncRequestHandler = RequestHandler
 
-export type Result<T, E> = Ok<T> | Err<E>;
-export const Ok = <T>(value: T): Ok<T> => ({ ok: true, value });
-export const Err = <E>(value: E): Err<E> => ({ ok: false, value });
-```
-
-### Step 2. Model Domain Errors as Types
-- Branch: `3.5-results-errors-validation`
-- Commit: `156fb5688c5f784e38e80e7d5e77c3001a2f4312`
-- Quick jump: `git checkout 156fb5688c5f784e38e80e7d5e77c3001a2f4312`
-
-We add a discriminated union for journal errors so status mapping can become explicit and consistent.
-
-Before (`src/service/errors.ts`, new file):
-```ts
-// /dev/null
-```
-
-After (`src/service/errors.ts:1-20`):
-```ts
-export type JournalError =
-  | { name: "EntryNotFound"; message: string }
-  | { name: "InvalidContent"; message: string }
-  | { name: "ValidationError"; message: string }
-  | { name: "UnexpectedDependencyError"; message: string };
-
-export const EntryNotFound = (message: string): JournalError => ({
-  name: "EntryNotFound",
-  message,
-});
-```
-
-### Step 3. Refactor Repository to Return `Result`
-- Branch: `3.5-results-errors-validation`
-- Commit: `8cf7a773e3c5645a070e4bda26e1b323c3df2db8`
-- Quick jump: `git checkout 8cf7a773e3c5645a070e4bda26e1b323c3df2db8`
-
-We replace throw/boolean patterns with typed `Ok(...)` and `Err(...)` values at the data boundary.
-
-Before (`src/repository/JournalRespository.ts:8-15`):
-```ts
-export interface IJournalRepository {
-  add(content: string): IJournalEntry;
-  getById(id: string): IJournalEntry;
-  getAll(): IJournalEntry[];
-  replaceById(id: string, content: string): IJournalEntry;
-  patchById(id: string, content: string): IJournalEntry;
-  deleteById(id: string): boolean;
+// Helper to wrap async route handlers and catch errors
+function asyncHandler(fn: AsyncRequestHandler) {
+  return function (req: Request, res: Response, next: any) {
+    return Promise.resolve(fn(req, res, next)).catch(next)
+  }
 }
 ```
 
-After (`src/repository/JournalRespository.ts:10-17`):
+### Step 2. Make the Repository Promise-Based
+- Branch: `4.6-asynchronous-execution-model`
+- Commit: `5ec517ec4e4060761d098d0354b95599a563dfde`
+- Quick jump: `git checkout 5ec517ec4e4060761d098d0354b95599a563dfde`
+
+We update repository methods to return Promises so the storage layer can become async later.
+
+Before (`src/repository/JournalRespository.ts:13-22`):
 ```ts
 export interface IJournalRepository {
   add(content: string): Result<IJournalEntry, JournalError>;
@@ -127,401 +90,209 @@ export interface IJournalRepository {
 }
 ```
 
-### Step 4. Add Service-Level Validation + Result Contracts
-- Branch: `3.5-results-errors-validation`
-- Commit: `9757b7f6860821020b60f7cb131102c77f67acc6`
-- Quick jump: `git checkout 9757b7f6860821020b60f7cb131102c77f67acc6`
-
-We make the service responsible for core business checks and return typed failures before repository calls.
-
-Before (`src/service/JournalService.ts:20-24`):
+After (`src/repository/JournalRespository.ts:13-28`):
 ```ts
-createEntry(content: string): IJournalEntry {
-  return this.repository.add(content);
+export interface IJournalRepository {
+  add(content: string): Promise<Result<IJournalEntry, JournalError>>
+  getById(id: string): Promise<Result<IJournalEntry, JournalError>>
+  getAll(): Promise<Result<IJournalEntry[], JournalError>>
+  replaceById(
+    id: string,
+    content: string,
+  ): Promise<Result<IJournalEntry, JournalError>>
+  patchById(
+    id: string,
+    content: string,
+  ): Promise<Result<IJournalEntry, JournalError>>
+  deleteById(id: string): Promise<Result<null, JournalError>>
 }
 ```
 
-After (`src/service/JournalService.ts:21-34`):
+### Step 3. Make the Service Promise-Based
+- Branch: `4.6-asynchronous-execution-model`
+- Commit: `add41a1115040d0fde72c67b20571b6c4bd56863`
+- Quick jump: `git checkout add41a1115040d0fde72c67b20571b6c4bd56863`
+
+We update service contracts and implementations to return Promises and use async functions.
+
+Before (`src/service/JournalService.ts:10-29`):
 ```ts
-createEntry(content: string): Result<IJournalEntry, JournalError> {
-  const normalized = content.trim();
-
-  if (!normalized) {
-    return Err(InvalidContent("Entry content is required."));
-  }
-
-  if (normalized.length > 5000) {
-    return Err(ValidationError("Entry content must be 5000 characters or fewer."));
-  }
-
-  return this.repository.add(normalized);
+export interface IJournalService {
+  createEntry(content: string): Result<IJournalEntry, JournalError>;
+  getEntry(id: string): Result<IJournalEntry, JournalError>;
+  getEntries(): Result<IJournalEntry[], JournalError>;
+  replaceEntry(id: string, content: string): Result<IJournalEntry, JournalError>;
+  patchEntry(id: string, content: string): Result<IJournalEntry, JournalError>;
+  deleteEntry(id: string): Result<null, JournalError>;
 }
+
+class JournalService implements IJournalService {
+  constructor(private readonly repository: IJournalRepository) {}
+
+  createEntry(content: string): Result<IJournalEntry, JournalError> {
+    const normalized = content.trim();
 ```
 
-### Step 5. Validate Form Content at Route Boundary
-- Branch: `3.5-results-errors-validation`
-- Commit: `cb970e8a3bc76cf7deb91446a8b80e966916b7b4`
-- Quick jump: `git checkout cb970e8a3bc76cf7deb91446a8b80e966916b7b4`
-
-We reject malformed form payloads early with a clear `400` response and warning log.
-
-Before (`src/app.ts:41-44`):
+After (`src/service/JournalService.ts:10-31`):
 ```ts
-this.app.post("/entries/new", express.urlencoded({ extended: true }), (req: Request, res: Response) => {
-  const content = req.body.content;
-  controller.newEntryFromForm(res, content);
-});
+export interface IJournalService {
+  createEntry(content: string): Promise<Result<IJournalEntry, JournalError>>
+  getEntry(id: string): Promise<Result<IJournalEntry, JournalError>>
+  getEntries(): Promise<Result<IJournalEntry[], JournalError>>
+  replaceEntry(
+    id: string,
+    content: string,
+  ): Promise<Result<IJournalEntry, JournalError>>
+  patchEntry(
+    id: string,
+    content: string,
+  ): Promise<Result<IJournalEntry, JournalError>>
+  deleteEntry(id: string): Promise<Result<null, JournalError>>
+}
+
+class JournalService implements IJournalService {
+  constructor(private readonly repository: IJournalRepository) {}
+
+  async createEntry(
+    content: string,
+  ): Promise<Result<IJournalEntry, JournalError>> {
+    const normalized = content.trim()
 ```
 
-After (`src/app.ts:39-52`):
+### Step 4. Wrap Routes with the Async Handler
+- Branch: `4.6-asynchronous-execution-model`
+- Commit: `0f0210cf29e08bf1dcbc067b1944715f44d3935c`
+- Quick jump: `git checkout 0f0210cf29e08bf1dcbc067b1944715f44d3935c`
+
+We use the new helper so route errors can flow into Express error handling.
+
+Before (`src/app.ts:45-63`):
 ```ts
-this.app.post("/entries/new", express.urlencoded({ extended: true }), (req: Request, res: Response) => {
-  const raw = req.body.content;
-  const content = typeof raw === "string" ? raw.trim() : "";
+this.app.get('/', (_req: Request, res: Response) => {
+  this.logger.info('GET /')
+  this.controller.showHome(res)
+})
+
+this.app.get('/entries/new', (_req: Request, res: Response) =>
+  controller.showEntryForm(res),
+)
+```
+
+After (`src/app.ts:45-68`):
+```ts
+this.app.get(
+  '/',
+  asyncHandler((_req: Request, res: Response) => {
+    this.logger.info('GET /')
+    this.controller.showHome(res)
+  }),
+)
+
+this.app.get(
+  '/entries/new',
+  asyncHandler((_req: Request, res: Response) =>
+    controller.showEntryForm(res),
+  ),
+)
+```
+
+### Step 5. Return Controller Promises from Routes
+- Branch: `4.6-asynchronous-execution-model`
+- Commit: `17020da4f112835dc37de79340591a3dd58e28bc`
+- Quick jump: `git checkout 17020da4f112835dc37de79340591a3dd58e28bc`
+
+We return the Promise from the controller so async errors are caught by the wrapper.
+
+Before (`src/app.ts:63-79`):
+```ts
+asyncHandler((req: Request, res: Response) => {
+  const raw = req.body.content
+  const content = typeof raw === 'string' ? raw.trim() : ''
 
   if (!content) {
-    this.logger.warn("POST /entries/new rejected: content missing or empty");
-    res.status(400).send("Entry content is required.");
-    return;
+    this.logger.warn(
+      'POST /entries/new rejected: content missing or empty',
+    )
+    res.status(400).send('Entry content is required.')
+    return
   }
 
-  controller.newEntryFromForm(res, content);
-});
+  controller.newEntryFromForm(res, content)
+})
 ```
 
-### Step 6. Map Result Errors in Controller with Type Narrowing
-- Branch: `3.5-results-errors-validation`
-- Commit: `55a65c38f57e34577270d11077b046661940291c`
-- Quick jump: `git checkout 55a65c38f57e34577270d11077b046661940291c`
-
-We centralize controller-level translation from domain errors to HTTP responses.
-
-Before (`src/controller/JournalController.ts:34-38`):
+After (`src/app.ts:63-79`):
 ```ts
-newEntryFromForm(res: Response, content: string): void {
-  this.logger.info("Creating entry from form");
-  this.service.createEntry(content);
-  res.redirect("/");
-}
-```
+asyncHandler((req: Request, res: Response) => {
+  const raw = req.body.content
+  const content = typeof raw === 'string' ? raw.trim() : ''
 
-After (`src/controller/JournalController.ts:54-78`):
-```ts
-newEntryFromForm(res: Response, content: string): void {
-  this.logger.info("Creating entry from form");
-
-  const result = this.service.createEntry(content);
-  if (!result.ok && this.isJournalError(result.value)) {
-    const error = result.value;
-    if (error.name === "InvalidContent" || error.name === "ValidationError") {
-      this.logger.warn(`Create entry rejected: ${error.message}`);
-      res.status(400).send(error.message);
-      return;
-    }
-
-    this.logger.error(`Create entry failed: ${error.message}`);
-    res.status(500).send("Unable to create entry.");
-    return;
+  if (!content) {
+    this.logger.warn(
+      'POST /entries/new rejected: content missing or empty',
+    )
+    res.status(400).send('Entry content is required.')
+    return
   }
 
-  if (!result.ok) {
-    res.status(500).send("Unable to create entry.");
-    return;
-  }
-
-  res.redirect(`/entries/${result.value.id}`);
-}
+  return controller.newEntryFromForm(res, content)
+})
 ```
 
-### Step 7. Add Timestamped Logging Format
-- Branch: `3.5-results-errors-validation`
-- Commit: `595bfeac14be3ce2e96673c1b479377536eea540`
-- Quick jump: `git checkout 595bfeac14be3ce2e96673c1b479377536eea540`
+### Step 6. Use async/await for Clearer Flow
+- Branch: `4.6-asynchronous-execution-model`
+- Commit: `edc475222d3b4a26997f4a95c4c0d8c1a9c6c50e`
+- Quick jump: `git checkout edc475222d3b4a26997f4a95c4c0d8c1a9c6c50e`
 
-We improve operational context by stamping every log entry with ISO timestamp and level.
+We make the route handlers async and await the controller calls for readability.
 
-Before (`src/service/LoggingService.ts:9-15`):
+Before (`src/app.ts:45-57`):
 ```ts
-info(message: string): void {
-  console.log(`[INFO] ${message}`);
-}
+this.app.get(
+  '/',
+  asyncHandler((_req: Request, res: Response) => {
+    this.logger.info('GET /')
+    return this.controller.showHome(res)
+  }),
+)
 ```
 
-After (`src/service/LoggingService.ts:7-16`):
+After (`src/app.ts:45-58`):
 ```ts
-private stamp(level: string, message: string): string {
-  return `${new Date().toISOString()} [${level}] ${message}`;
-}
-
-info(message: string): void {
-  console.log(this.stamp("INFO", message));
-}
+this.app.get(
+  '/',
+  asyncHandler(async (_req: Request, res: Response) => {
+    this.logger.info('GET /')
+    await this.controller.showHome(res)
+  }),
+)
 ```
 
-### Step 8. Add Template Dependencies
-- Branch: `3.5-results-errors-validation`
-- Commit: `90768eeb1037ba19496cbd0496f8245caf7ce856`
-- Quick jump: `git checkout 90768eeb1037ba19496cbd0496f8245caf7ce856`
+### Step 7. Remove Redundant Type Annotations
+- Branch: `4.6-asynchronous-execution-model`
+- Commit: `b13b78239bcee6da2174638b27537453f1489bea`
+- Quick jump: `git checkout b13b78239bcee6da2174638b27537453f1489bea`
 
-We install template runtime and layout middleware needed for server-side rendering.
+We drop repeated Request/Response types where they can be inferred by TypeScript.
 
-Before (`package.json:20-24`):
-```json
-"dependencies": {
-  "express": "^5.2.1",
-  "ts-node": "^10.9.2"
-}
-```
-
-After (`package.json:20-26`):
-```json
-"dependencies": {
-  "ejs": "^4.0.1",
-  "express": "^5.2.1",
-  "express-ejs-layouts": "^2.5.1",
-  "ts-node": "^10.9.2"
-}
-```
-
-### Step 9. Configure EJS and Shared Layouts in App Bootstrap
-- Branch: `3.5-results-errors-validation`
-- Commit: `d9f61ad030effedd8aecda8ef64e7995d5ee6769`
-- Quick jump: `git checkout d9f61ad030effedd8aecda8ef64e7995d5ee6769`
-
-We wire template rendering once in app startup so all routes can render view files consistently.
-
-Before (`src/app.ts:25-27`):
+Before (`src/app.ts:45-55`):
 ```ts
-registerMiddleware(): void {
-  this.app.use(express.static("static"));
-}
+this.app.get(
+  '/',
+  asyncHandler(async (_req: Request, res: Response) => {
+    this.logger.info('GET /')
+    await this.controller.showHome(res)
+  }),
+)
 ```
 
-After (`src/app.ts:22-33`):
+After (`src/app.ts:45-55`):
 ```ts
-registerMiddleware(): void {
-  this.app.use(express.static("static"));
-  this.app.use(Layouts);
-}
-
-registerTemplating(): void {
-  this.app.set("view engine", "ejs");
-  this.app.set("views", path.join(process.cwd(), "views"));
-  this.app.set("layout", "layouts/base");
-}
+this.app.get(
+  '/',
+  asyncHandler(async (_req, res) => {
+    this.logger.info('GET /')
+    await this.controller.showHome(res)
+  }),
+)
 ```
-
-### Step 10. Introduce View Templates and Base Layout
-- Branch: `3.5-results-errors-validation`
-- Commit: `f6ef3236455ff4c76b347d0f5d41db019334c686`
-- Quick jump: `git checkout f6ef3236455ff4c76b347d0f5d41db019334c686`
-
-We create reusable templates for home, entry flows, and not-found states under one layout.
-
-Before (`views/layouts/base.ejs`, new file):
-```html
-<!-- /dev/null -->
-```
-
-After (`views/layouts/base.ejs:1-17`):
-```html
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Journal App</title>
-    <link rel="stylesheet" href="/styles.css" />
-  </head>
-  <body>
-    <nav class="main-nav">
-      <a href="/">Home</a>
-      <a href="/entries">Entries</a>
-      <a href="/entries/new">New Entry</a>
-    </nav>
-    <main><%- body %></main>
-  </body>
-</html>
-```
-
-### Step 11. Replace Inline HTML Responses with `res.render(...)`
-- Branch: `3.5-results-errors-validation`
-- Commit: `28969c565304624eada496ebc6af141010e82d33`
-- Quick jump: `git checkout 28969c565304624eada496ebc6af141010e82d33`
-
-We move controller output to templates, which reduces string-concatenation HTML and improves maintainability.
-
-Before (`src/controller/JournalController.ts:84-91`):
-```ts
-const entries = result.value;
-let html = "<h1>All Journal Entries</h1><ul>";
-for (const entry of entries) {
-  html += `<li><a href="/entries/${entry.id}">${entry.content}</a></li>`;
-}
-html += "</ul>";
-res.send(html);
-```
-
-After (`src/controller/JournalController.ts:80-91`):
-```ts
-if (!result.ok) {
-  if (this.isJournalError(result.value)) {
-    res.status(500).render("entries/not-found", { message: result.value.message });
-  } else {
-    res.status(500).render("entries/not-found", { message: "Unable to list entries" });
-  }
-  return;
-}
-
-res.render("entries/index", { entries: result.value });
-```
-
-### Step 12. Split Form Delete Flow from API Delete Semantics
-- Branch: `3.5-results-errors-validation`
-- Commit: `e9e04b50916b31fc6f92c5beb8b7a044ad9644ee`
-- Quick jump: `git checkout e9e04b50916b31fc6f92c5beb8b7a044ad9644ee`
-
-We preserve API-style delete behavior while giving form flow a redirect-friendly handler.
-
-Before (`src/app.ts:81`):
-```ts
-this.controller.deleteEntry(res, id);
-```
-
-After (`src/app.ts:81`):
-```ts
-this.controller.deleteEntryFromForm(res, id);
-```
-
-Before (`src/controller/JournalController.ts`, method absent):
-```ts
-// no deleteEntryFromForm method
-```
-
-After (`src/controller/JournalController.ts:172-193`):
-```ts
-deleteEntryFromForm(res: Response, id: string): void {
-  this.logger.info(`Deleting entry ${id} from form`);
-  const result = this.service.deleteEntry(id);
-  if (!result.ok && this.isJournalError(result.value) && result.value.name === "EntryNotFound") {
-    res.status(404).render("entries/not-found", { id, error: result.value });
-    return;
-  }
-  if (!result.ok) {
-    res.status(500).render("entries/not-found", { id, message: "Unable to delete entry" });
-    return;
-  }
-  res.redirect("/entries");
-}
-```
-
-### Step 13. Modernize CSS for App-Like Experience
-- Branch: `3.5-results-errors-validation`
-- Commit: `16e334a6fe6183e33874ae22da447c16e35abb4d`
-- Quick jump: `git checkout 16e334a6fe6183e33874ae22da447c16e35abb4d`
-
-We replace the neon demo style with cleaner spacing, typography, navigation, and button treatment.
-
-Before (`static/styles.css:1-10`):
-```css
-body {
-  margin: 0;
-  padding: 40px;
-  font-family: Arial, Helvetica, sans-serif;
-  background-color: #0b0f1a;
-  color: #e6f1ff;
-}
-```
-
-After (`static/styles.css:1-14`):
-```css
-body {
-  margin: 0;
-  padding: 24px;
-  font-family: "Segoe UI", Arial, sans-serif;
-  background: #f5f7fb;
-  color: #1f2937;
-}
-
-main {
-  max-width: 920px;
-  margin: 0 auto;
-}
-```
-
-### Step 14. Add Focused HTTP Regression Checks
-- Branch: `3.5-results-errors-validation`
-- Commit: `e3d2bd2af65ddd1110bc53f1e7ceb6acaf2f88d8`
-- Quick jump: `git checkout e3d2bd2af65ddd1110bc53f1e7ceb6acaf2f88d8`
-
-We add a lecture-specific `.http` script to validate template render behavior and 400-level validation responses.
-
-Before (`test/3.5.http`, new file):
-```http
-# /dev/null
-```
-
-After (`test/3.5.http:1-14`):
-```http
-### Seed entry
-POST http://localhost:3000/entries/new
-Content-Type: application/x-www-form-urlencoded
-
-content=First+entry
-
-### Verify template-rendered page
-GET http://localhost:3000/entries/1
-
-### Verify validation failure maps to 400
-POST http://localhost:3000/entries/new
-Content-Type: application/x-www-form-urlencoded
-
-content=
-```
-
-### Step 15. Improve Home Template Guidance Text
-- Branch: `3.5-results-errors-validation`
-- Commit: `0b95f38b0796485dd6e660967edfd0cf4374464c`
-- Quick jump: `git checkout 0b95f38b0796485dd6e660967edfd0cf4374464c`
-
-We make home-page intent clearer so navigation affordances are obvious in the rendered UI.
-
-Before (`views/home.ejs:1-4`):
-```html
-<h1>Welcome to the Journal App!</h1>
-<p>This is the starting point of our Journal Application.</p>
-<ul>
-```
-
-After (`views/home.ejs:1-5`):
-```html
-<h1>Welcome to the Journal App!</h1>
-<p>This is the starting point of our Journal Application.</p>
-<p>Use the navigation links to create, browse, edit, and delete journal entries.</p>
-<ul>
-```
-
-### Step 16. Final Dependency Typing Fix for Layout Middleware
-- Branch: `3.5-results-errors-validation`
-- Commit: `66bcd512cfdce07eedc4ce4b041056676c3f9ab1`
-- Quick jump: `git checkout 66bcd512cfdce07eedc4ce4b041056676c3f9ab1`
-
-We finish by adding missing type definitions to keep TypeScript dependency state aligned with EJS layout usage.
-
-Before (`package.json:26-29`):
-```json
-"devDependencies": {
-  "@types/express": "^5.0.6"
-}
-```
-
-After (`package.json:26-30`):
-```json
-"devDependencies": {
-  "@types/express": "^5.0.6",
-  "@types/express-ejs-layouts": "^2.5.4"
-}
-```
-
-## Conclusion
-This sequence intentionally layers reliability and clarity: typed results, typed domain errors, boundary validation, and explicit error mapping first; then template architecture, UI polish, and focused tests. The tradeoff is a bit more boilerplate in each layer, but we gain predictable behavior, cleaner controller logic, and a codebase that scales better for future features.

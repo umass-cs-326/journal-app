@@ -24,7 +24,7 @@ A request starts at the route, moves through the controller and service, then re
 
 Promises provide a uniform way to represent work that completes later. By returning Promises from repositories, services, and controllers, each layer can be awaited by the next one. Why: We choose Promises because they are the native async primitive in JavaScript and they compose cleanly across layers. Used in Step 2, Step 3.
 
-References:
+Required Reading:
 
 - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise
 
@@ -32,7 +32,7 @@ References:
 
 Async boundaries are the places where a function returns a Promise and can be awaited. In this lecture, repository, service, and controller methods are all async-ready so the call chain stays consistent. Why: We choose consistent async boundaries to avoid mixing sync and async assumptions across the app. Used in Step 2, Step 3, Step 5, Step 6.
 
-References:
+Required Reading:
 
 - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function
 
@@ -40,7 +40,7 @@ References:
 
 Express does not automatically catch rejected Promises from async handlers. A wrapper like `asyncHandler` ensures any async error is forwarded to Express error handling. Why: We choose a wrapper so route code can stay clean while errors still flow to `next`. Used in Step 1, Step 4.
 
-References:
+Required Reading:
 
 - https://expressjs.com/en/guide/error-handling.html
 

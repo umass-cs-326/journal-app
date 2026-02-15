@@ -1,213 +1,252 @@
-import type { Response } from "express";
-import { IJournalService } from "../service/JournalService";
-import { ILoggingService } from "../service/LoggingService";
-import { JournalError } from "../service/errors";
+import type { Response } from 'express'
+import { IJournalService } from '../service/JournalService'
+import { ILoggingService } from '../service/LoggingService'
+import { JournalError } from '../service/errors'
 
 export interface IJournalController {
-  showHome(res: Response): void;
-  showEntryForm(res: Response): void;
-  newEntryFromForm(res: Response, content: string): void;
-  showAllEntries(res: Response): void;
-  showEntry(res: Response, id: string): void;
-  showEditForm(res: Response, id: string): void;
-  updateEntryFromForm(res: Response, id: string, content: string): void;
-  replaceEntry(res: Response, id: string, content: string): void;
-  patchEntry(res: Response, id: string, content: string): void;
-  deleteEntry(res: Response, id: string): void;
-  deleteEntryFromForm(res: Response, id: string): void;
+  showHome(res: Response): Promise<void>
+  showEntryForm(res: Response): Promise<void>
+  newEntryFromForm(res: Response, content: string): Promise<void>
+  showAllEntries(res: Response): Promise<void>
+  showEntry(res: Response, id: string): Promise<void>
+  showEditForm(res: Response, id: string): Promise<void>
+  updateEntryFromForm(res: Response, id: string, content: string): Promise<void>
+  replaceEntry(res: Response, id: string, content: string): Promise<void>
+  patchEntry(res: Response, id: string, content: string): Promise<void>
+  deleteEntry(res: Response, id: string): Promise<void>
+  deleteEntryFromForm(res: Response, id: string): Promise<void>
 }
 
 class JournalController implements IJournalController {
   constructor(
     private readonly service: IJournalService,
-    private readonly logger: ILoggingService
+    private readonly logger: ILoggingService,
   ) {}
 
   private isJournalError(value: unknown): value is JournalError {
     return (
-      typeof value === "object" &&
+      typeof value === 'object' &&
       value !== null &&
-      "name" in value &&
-      "message" in value
-    );
+      'name' in value &&
+      'message' in value
+    )
   }
 
   private mapErrorStatus(error: JournalError): number {
-    if (error.name === "EntryNotFound") {
-      return 404;
+    if (error.name === 'EntryNotFound') {
+      return 404
     }
-    if (error.name === "InvalidContent" || error.name === "ValidationError") {
-      return 400;
+    if (error.name === 'InvalidContent' || error.name === 'ValidationError') {
+      return 400
     }
-    return 500;
+    return 500
   }
 
-  showHome(res: Response): void {
-    this.logger.info("Rendering home page");
-    res.render("home");
+  async showHome(res: Response): Promise<void> {
+    this.logger.info('Rendering home page')
+    res.render('home')
   }
 
-  showEntryForm(res: Response): void {
-    this.logger.info("Rendering new entry form");
-    res.render("entries/new");
+  async showEntryForm(res: Response): Promise<void> {
+    this.logger.info('Rendering new entry form')
+    res.render('entries/new')
   }
 
-  newEntryFromForm(res: Response, content: string): void {
-    this.logger.info("Creating entry from form");
+  async newEntryFromForm(res: Response, content: string): Promise<void> {
+    this.logger.info('Creating entry from form')
 
-    const result = this.service.createEntry(content);
+    const result = await this.service.createEntry(content)
     if (!result.ok && this.isJournalError(result.value)) {
-      const error = result.value;
-      if (error.name === "InvalidContent" || error.name === "ValidationError") {
-        this.logger.warn(`Create entry rejected: ${error.message}`);
-        res.status(400).send(error.message);
-        return;
+      const error = result.value
+      if (error.name === 'InvalidContent' || error.name === 'ValidationError') {
+        this.logger.warn(`Create entry rejected: ${error.message}`)
+        res.status(400).send(error.message)
+        return
       }
 
-      this.logger.error(`Create entry failed: ${error.message}`);
-      res.status(500).send("Unable to create entry.");
-      return;
+      this.logger.error(`Create entry failed: ${error.message}`)
+      res.status(500).send('Unable to create entry.')
+      return
     }
 
     if (!result.ok) {
-      res.status(500).send("Unable to create entry.");
-      return;
+      res.status(500).send('Unable to create entry.')
+      return
     }
 
-    res.redirect(`/entries/${result.value.id}`);
+    res.redirect(`/entries/${result.value.id}`)
   }
 
-  showAllEntries(res: Response): void {
-    this.logger.info("Listing all journal entries");
-    const result = this.service.getEntries();
+  async showAllEntries(res: Response): Promise<void> {
+    this.logger.info('Listing all journal entries')
+    const result = await this.service.getEntries()
     if (!result.ok) {
       if (this.isJournalError(result.value)) {
-        res.status(500).render("entries/not-found", { message: result.value.message });
+        res
+          .status(500)
+          .render('entries/not-found', { message: result.value.message })
       } else {
-        res.status(500).render("entries/not-found", { message: "Unable to list entries" });
+        res
+          .status(500)
+          .render('entries/not-found', { message: 'Unable to list entries' })
       }
-      return;
+      return
     }
 
-    res.render("entries/index", { entries: result.value });
+    res.render('entries/index', { entries: result.value })
   }
 
-  showEntry(res: Response, id: string): void {
-    this.logger.info(`Showing entry ${id}`);
-    const result = this.service.getEntry(id);
-    if (!result.ok && this.isJournalError(result.value) && result.value.name === "EntryNotFound") {
-      res.status(404).render("entries/not-found", { id, error: result.value });
-      return;
+  async showEntry(res: Response, id: string): Promise<void> {
+    this.logger.info(`Showing entry ${id}`)
+    const result = await this.service.getEntry(id)
+    if (
+      !result.ok &&
+      this.isJournalError(result.value) &&
+      result.value.name === 'EntryNotFound'
+    ) {
+      res.status(404).render('entries/not-found', { id, error: result.value })
+      return
     }
     if (!result.ok && this.isJournalError(result.value)) {
-      res.status(500).render("entries/not-found", { id, error: result.value });
-      return;
+      res.status(500).render('entries/not-found', { id, error: result.value })
+      return
     }
     if (!result.ok) {
-      res.status(500).render("entries/not-found", { id, message: "Unable to load entry" });
-      return;
+      res
+        .status(500)
+        .render('entries/not-found', { id, message: 'Unable to load entry' })
+      return
     }
 
-    res.render("entries/show", { entry: result.value });
+    res.render('entries/show', { entry: result.value })
   }
 
-  showEditForm(res: Response, id: string): void {
-    const result = this.service.getEntry(id);
-    if (!result.ok && this.isJournalError(result.value) && result.value.name === "EntryNotFound") {
-      res.status(404).render("entries/not-found", { id, error: result.value });
-      return;
+  async showEditForm(res: Response, id: string): Promise<void> {
+    const result = await this.service.getEntry(id)
+    if (
+      !result.ok &&
+      this.isJournalError(result.value) &&
+      result.value.name === 'EntryNotFound'
+    ) {
+      res.status(404).render('entries/not-found', { id, error: result.value })
+      return
     }
     if (!result.ok && this.isJournalError(result.value)) {
-      res.status(500).render("entries/not-found", { id, error: result.value });
-      return;
+      res.status(500).render('entries/not-found', { id, error: result.value })
+      return
     }
     if (!result.ok) {
-      res.status(500).render("entries/not-found", { id, message: "Unable to load edit form" });
-      return;
+      res
+        .status(500)
+        .render('entries/not-found', {
+          id,
+          message: 'Unable to load edit form',
+        })
+      return
     }
 
-    res.render("entries/edit", { entry: result.value });
+    res.render('entries/edit', { entry: result.value })
   }
 
-  updateEntryFromForm(res: Response, id: string, content: string): void {
-    this.logger.info(`Updating entry ${id} from form POST`);
-    const result = this.service.patchEntry(id, content);
+  async updateEntryFromForm(
+    res: Response,
+    id: string,
+    content: string,
+  ): Promise<void> {
+    this.logger.info(`Updating entry ${id} from form POST`)
+    const result = await this.service.patchEntry(id, content)
     if (!result.ok && this.isJournalError(result.value)) {
-      res.status(this.mapErrorStatus(result.value)).send(result.value.message);
-      return;
+      res.status(this.mapErrorStatus(result.value)).send(result.value.message)
+      return
     }
     if (!result.ok) {
-      res.status(500).send("Unable to update entry");
-      return;
+      res.status(500).send('Unable to update entry')
+      return
     }
-    res.redirect(`/entries/${id}`);
+    res.redirect(`/entries/${id}`)
   }
 
-  replaceEntry(res: Response, id: string, content: string): void {
-    this.logger.info(`Replacing entry ${id} via PUT`);
-    const result = this.service.replaceEntry(id, content);
+  async replaceEntry(
+    res: Response,
+    id: string,
+    content: string,
+  ): Promise<void> {
+    this.logger.info(`Replacing entry ${id} via PUT`)
+    const result = await this.service.replaceEntry(id, content)
     if (!result.ok && this.isJournalError(result.value)) {
-      res.status(this.mapErrorStatus(result.value)).json({ message: result.value.message });
-      return;
+      res
+        .status(this.mapErrorStatus(result.value))
+        .json({ message: result.value.message })
+      return
     }
     if (!result.ok) {
-      res.status(500).json({ message: "Unable to replace entry" });
-      return;
+      res.status(500).json({ message: 'Unable to replace entry' })
+      return
     }
-    res.json(result.value);
+    res.json(result.value)
   }
 
-  patchEntry(res: Response, id: string, content: string): void {
-    this.logger.info(`Patching entry ${id} via PATCH`);
-    const result = this.service.patchEntry(id, content);
+  async patchEntry(res: Response, id: string, content: string): Promise<void> {
+    this.logger.info(`Patching entry ${id} via PATCH`)
+    const result = await this.service.patchEntry(id, content)
     if (!result.ok && this.isJournalError(result.value)) {
-      res.status(this.mapErrorStatus(result.value)).json({ message: result.value.message });
-      return;
+      res
+        .status(this.mapErrorStatus(result.value))
+        .json({ message: result.value.message })
+      return
     }
     if (!result.ok) {
-      res.status(500).json({ message: "Unable to patch entry" });
-      return;
+      res.status(500).json({ message: 'Unable to patch entry' })
+      return
     }
-    res.json(result.value);
+    res.json(result.value)
   }
 
-  deleteEntryFromForm(res: Response, id: string): void {
-    this.logger.info(`Deleting entry ${id} from form`);
-    const result = this.service.deleteEntry(id);
-    if (!result.ok && this.isJournalError(result.value) && result.value.name === "EntryNotFound") {
-      res.status(404).render("entries/not-found", { id, error: result.value });
-      return;
+  async deleteEntryFromForm(res: Response, id: string): Promise<void> {
+    this.logger.info(`Deleting entry ${id} from form`)
+    const result = await this.service.deleteEntry(id)
+    if (
+      !result.ok &&
+      this.isJournalError(result.value) &&
+      result.value.name === 'EntryNotFound'
+    ) {
+      res.status(404).render('entries/not-found', { id, error: result.value })
+      return
     }
     if (!result.ok && this.isJournalError(result.value)) {
-      res.status(500).render("entries/not-found", { id, error: result.value });
-      return;
+      res.status(500).render('entries/not-found', { id, error: result.value })
+      return
     }
     if (!result.ok) {
-      res.status(500).render("entries/not-found", { id, message: "Unable to delete entry" });
-      return;
+      res
+        .status(500)
+        .render('entries/not-found', { id, message: 'Unable to delete entry' })
+      return
     }
-    res.redirect("/entries");
+    res.redirect('/entries')
   }
 
-  deleteEntry(res: Response, id: string): void {
-    this.logger.info(`Deleting entry ${id}`);
-    const result = this.service.deleteEntry(id);
+  async deleteEntry(res: Response, id: string): Promise<void> {
+    this.logger.info(`Deleting entry ${id}`)
+    const result = await this.service.deleteEntry(id)
     if (!result.ok && this.isJournalError(result.value)) {
-      this.logger.warn(`Delete failed for ${id}`);
-      res.status(this.mapErrorStatus(result.value)).json({ message: result.value.message });
-      return;
+      this.logger.warn(`Delete failed for ${id}`)
+      res
+        .status(this.mapErrorStatus(result.value))
+        .json({ message: result.value.message })
+      return
     }
     if (!result.ok) {
-      res.status(500).json({ message: "Unable to delete entry" });
-      return;
+      res.status(500).json({ message: 'Unable to delete entry' })
+      return
     }
-    res.status(204).send();
+    res.status(204).send()
   }
 }
 
 export function CreateJournalController(
   service: IJournalService,
-  logger: ILoggingService
+  logger: ILoggingService,
 ): IJournalController {
-  return new JournalController(service, logger);
+  return new JournalController(service, logger)
 }

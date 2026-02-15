@@ -1,6 +1,10 @@
-import { IJournalEntry, createJournalEntry } from "../model/JournalEntry.js";
-import { Result, Ok, Err } from "../lib/result.js";
-import { JournalError, EntryNotFound, ValidationError } from "../service/errors.js";
+import { IJournalEntry, createJournalEntry } from '../model/JournalEntry.js'
+import { Result, Ok, Err } from '../lib/result.js'
+import {
+  JournalError,
+  EntryNotFound,
+  ValidationError,
+} from '../service/errors.js'
 
 /**
  * Repository interface.
@@ -9,65 +13,85 @@ import { JournalError, EntryNotFound, ValidationError } from "../service/errors.
  * Today it's in-memory, later it can be a database.
  */
 export interface IJournalRepository {
-  add(content: string): Result<IJournalEntry, JournalError>;
-  getById(id: string): Result<IJournalEntry, JournalError>;
-  getAll(): Result<IJournalEntry[], JournalError>;
-  replaceById(id: string, content: string): Result<IJournalEntry, JournalError>;
-  patchById(id: string, content: string): Result<IJournalEntry, JournalError>;
-  deleteById(id: string): Result<null, JournalError>;
+  add(content: string): Promise<Result<IJournalEntry, JournalError>>
+  getById(id: string): Promise<Result<IJournalEntry, JournalError>>
+  getAll(): Promise<Result<IJournalEntry[], JournalError>>
+  replaceById(
+    id: string,
+    content: string,
+  ): Promise<Result<IJournalEntry, JournalError>>
+  patchById(
+    id: string,
+    content: string,
+  ): Promise<Result<IJournalEntry, JournalError>>
+  deleteById(id: string): Promise<Result<null, JournalError>>
 }
 
 class JournalRepository implements IJournalRepository {
-  private entries: IJournalEntry[] = [];
-  private nextId = 1;
+  private entries: IJournalEntry[] = []
+  private nextId = 1
 
-  add(content: string): Result<IJournalEntry, JournalError> {
+  add(content: string): Promise<Result<IJournalEntry, JournalError>> {
     if (!content) {
-      return Err(ValidationError("Repository received empty content."));
+      return Promise.resolve(
+        Err(ValidationError('Repository received empty content.')),
+      )
     }
-    const entry = createJournalEntry(String(this.nextId++), content);
-    this.entries.push(entry);
-    return Ok(entry);
+    const entry = createJournalEntry(String(this.nextId++), content)
+    this.entries.push(entry)
+    return Promise.resolve(Ok(entry))
   }
 
-  getById(id: string): Result<IJournalEntry, JournalError> {
-    const found = this.entries.find((entry) => entry.id === id);
+  getById(id: string): Promise<Result<IJournalEntry, JournalError>> {
+    const found = this.entries.find(entry => entry.id === id)
     if (!found) {
-      return Err(EntryNotFound(`Journal entry with id ${id} not found`));
+      return Promise.resolve(
+        Err(EntryNotFound(`Journal entry with id ${id} not found`)),
+      )
     }
-    return Ok(found);
+    return Promise.resolve(Ok(found))
   }
 
-  getAll(): Result<IJournalEntry[], JournalError> {
-    return Ok(this.entries);
+  getAll(): Promise<Result<IJournalEntry[], JournalError>> {
+    return Promise.resolve(Ok(this.entries))
   }
 
-  replaceById(id: string, content: string): Result<IJournalEntry, JournalError> {
+  replaceById(
+    id: string,
+    content: string,
+  ): Promise<Result<IJournalEntry, JournalError>> {
     for (let i = 0; i < this.entries.length; i += 1) {
       if (this.entries[i].id === id) {
-        this.entries[i].content = content;
-        this.entries[i].updatedAt = new Date();
-        return Ok(this.entries[i]);
+        this.entries[i].content = content
+        this.entries[i].updatedAt = new Date()
+        return Promise.resolve(Ok(this.entries[i]))
       }
     }
-    return Err(EntryNotFound(`Journal entry with id ${id} not found`));
+    return Promise.resolve(
+      Err(EntryNotFound(`Journal entry with id ${id} not found`)),
+    )
   }
 
-  patchById(id: string, content: string): Result<IJournalEntry, JournalError> {
-    return this.replaceById(id, content);
+  patchById(
+    id: string,
+    content: string,
+  ): Promise<Result<IJournalEntry, JournalError>> {
+    return this.replaceById(id, content)
   }
 
-  deleteById(id: string): Result<null, JournalError> {
+  deleteById(id: string): Promise<Result<null, JournalError>> {
     for (let i = 0; i < this.entries.length; i += 1) {
       if (this.entries[i].id === id) {
-        this.entries.splice(i, 1);
-        return Ok(null);
+        this.entries.splice(i, 1)
+        return Promise.resolve(Ok(null))
       }
     }
-    return Err(EntryNotFound(`Journal entry with id ${id} not found`));
+    return Promise.resolve(
+      Err(EntryNotFound(`Journal entry with id ${id} not found`)),
+    )
   }
 }
 
 export function CreateJournalRepository(): IJournalRepository {
-  return new JournalRepository();
+  return new JournalRepository()
 }

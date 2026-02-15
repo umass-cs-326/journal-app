@@ -8,11 +8,9 @@ This application is part of an 8-week series of lectures on building web applica
 
 ## Branch
 
-This branch is `3.5-results-errors-validation`. It is associated with lecture 3.5 and should be referenced in conjunction with the lecture slides for that lecture. It continues the journal app narrative by replacing exception-driven flow with typed `Result<T, E>` outcomes and a discriminated `JournalError` model. With explicit success and failure values, each layer can signal intent clearly, and the controller can map domain errors to consistent HTTP responses.
+This branch is `4.6-asynchronous-execution-model`. It is associated with lecture 4.6 and should be referenced in conjunction with the lecture slides for that lecture. It continues the journal app narrative by making async behavior consistent from routes to storage. The repository and service now return Promises, and controllers are ready to await those results. This keeps the whole call chain aligned when we later swap in real async I/O like a database.
 
-From there, the branch tightens validation as a deliberate, layered practice. The route boundary rejects malformed form submissions early, the service enforces core business rules, and repository methods return typed failures instead of throwing. A small logging upgrade adds timestamps so the new validation and error paths are easier to observe and debug.
-
-The UI story shifts in parallel: controllers stop concatenating HTML strings and instead render EJS templates with a shared base layout. Views for home, entries, and not-found cases provide a consistent shell, while updated CSS makes the app feel more like a real product. The branch wraps up by separating form-delete redirects from API delete semantics and by adding HTTP regression checks that validate the new templated routes and 400-level error responses.
+At the route layer, we add a small async handler wrapper so Promise rejections flow into Express error handling. Routes are updated to return and await controller calls, which makes error flow reliable and the code easier to follow. A final cleanup removes redundant type annotations in handlers so students can focus on the logic instead of boilerplate.
 
 ## Reading
 

@@ -1,4 +1,4 @@
-# Lecture 4.6 Concepts: Async Flow, Promises, and Error Handling in Express
+# Lecture 4.6 Concepts: Asynchronous Execution Model
 
 ## Overview
 

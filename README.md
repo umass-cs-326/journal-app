@@ -8,7 +8,7 @@ This application is part of an 8-week series of lectures on building web applica
 
 ## Branch
 
-This branch is `4.6-asynchronous-execution-model`. It is associated with lecture 4.6 and should be referenced in conjunction with the lecture slides for that lecture. It continues the journal app narrative by making async behavior consistent from routes to storage. The repository and service now return Promises, and controllers are ready to await those results. This keeps the whole call chain aligned when we later swap in real async I/O like a database.
+This branch is `4.6-asynchronous-execution-model`. It is associated with lecture 4.6, titled "Asynchronous Execution Model", and should be referenced in conjunction with the lecture slides for that lecture. It continues the journal app narrative by making async behavior consistent from routes to storage. The repository and service now return Promises, and controllers are ready to await those results. This keeps the whole call chain aligned when we later swap in real async I/O like a database.
 
 At the route layer, we add a small async handler wrapper so Promise rejections flow into Express error handling. Routes are updated to return and await controller calls, which makes error flow reliable and the code easier to follow. A final cleanup removes redundant type annotations in handlers so students can focus on the logic instead of boilerplate.
 

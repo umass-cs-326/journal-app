@@ -43,19 +43,25 @@ export class ExpressApp implements IApp {
   registerRoutes(): void {
     const controller = this.controller
 
-    this.app.get('/', (_req: Request, res: Response) => {
-      this.logger.info('GET /')
-      this.controller.showHome(res)
-    })
+    this.app.get(
+      '/',
+      asyncHandler((_req: Request, res: Response) => {
+        this.logger.info('GET /')
+        this.controller.showHome(res)
+      }),
+    )
 
-    this.app.get('/entries/new', (_req: Request, res: Response) =>
-      controller.showEntryForm(res),
+    this.app.get(
+      '/entries/new',
+      asyncHandler((_req: Request, res: Response) =>
+        controller.showEntryForm(res),
+      ),
     )
 
     this.app.post(
       '/entries/new',
       express.urlencoded({ extended: true }),
-      (req: Request, res: Response) => {
+      asyncHandler((req: Request, res: Response) => {
         const raw = req.body.content
         const content = typeof raw === 'string' ? raw.trim() : ''
 
@@ -68,60 +74,83 @@ export class ExpressApp implements IApp {
         }
 
         controller.newEntryFromForm(res, content)
-      },
+      }),
     )
 
-    this.app.get('/entries', (_req: Request, res: Response) =>
-      controller.showAllEntries(res),
+    this.app.get(
+      '/entries',
+      asyncHandler((_req: Request, res: Response) =>
+        controller.showAllEntries(res),
+      ),
     )
 
-    this.app.get('/entries/:id', (req: Request, res: Response) => {
-      const id = req.params.id as string
-      controller.showEntry(res, id)
-    })
+    this.app.get(
+      '/entries/:id',
+      asyncHandler((req: Request, res: Response) => {
+        const id = req.params.id as string
+        controller.showEntry(res, id)
+      }),
+    )
 
-    this.app.get('/entries/:id/edit', (req: Request, res: Response) => {
-      this.logger.info(`GET /entries/${req.params.id}/edit`)
-      const id = req.params.id as string
-      this.controller.showEditForm(res, id)
-    })
+    this.app.get(
+      '/entries/:id/edit',
+      asyncHandler((req: Request, res: Response) => {
+        this.logger.info(`GET /entries/${req.params.id}/edit`)
+        const id = req.params.id as string
+        this.controller.showEditForm(res, id)
+      }),
+    )
 
     this.app.post(
       '/entries/:id/edit',
       express.urlencoded({ extended: true }),
-      (req, res) => {
+      asyncHandler((req: Request, res: Response) => {
         this.logger.info(`POST /entries/${req.params.id}/edit`)
         const id = req.params.id as string
         const content = req.body.content as string
         this.controller.updateEntryFromForm(res, id, content)
-      },
+      }),
     )
 
-    this.app.post('/entries/:id/delete', (req: Request, res: Response) => {
-      this.logger.info(`POST /entries/${req.params.id}/delete`)
-      const id = req.params.id as string
-      this.controller.deleteEntryFromForm(res, id)
-    })
+    this.app.post(
+      '/entries/:id/delete',
+      asyncHandler((req: Request, res: Response) => {
+        this.logger.info(`POST /entries/${req.params.id}/delete`)
+        const id = req.params.id as string
+        this.controller.deleteEntryFromForm(res, id)
+      }),
+    )
 
-    this.app.put('/api/entries/:id', express.json(), (req, res) => {
-      this.logger.info(`PUT /api/entries/${req.params.id}`)
-      const id = req.params.id as string
-      const content = req.body.content as string
-      this.controller.replaceEntry(res, id, content)
-    })
+    this.app.put(
+      '/api/entries/:id',
+      express.json(),
+      asyncHandler((req, res) => {
+        this.logger.info(`PUT /api/entries/${req.params.id}`)
+        const id = req.params.id as string
+        const content = req.body.content as string
+        this.controller.replaceEntry(res, id, content)
+      }),
+    )
 
-    this.app.patch('/api/entries/:id', express.json(), (req, res) => {
-      this.logger.info(`PATCH /api/entries/${req.params.id}`)
-      const id = req.params.id as string
-      const content = req.body.content as string
-      this.controller.patchEntry(res, id, content)
-    })
+    this.app.patch(
+      '/api/entries/:id',
+      express.json(),
+      asyncHandler((req, res) => {
+        this.logger.info(`PATCH /api/entries/${req.params.id}`)
+        const id = req.params.id as string
+        const content = req.body.content as string
+        this.controller.patchEntry(res, id, content)
+      }),
+    )
 
-    this.app.delete('/api/entries/:id', (req: Request, res: Response) => {
-      this.logger.info(`DELETE /api/entries/${req.params.id}`)
-      const id = req.params.id as string
-      this.controller.deleteEntry(res, id)
-    })
+    this.app.delete(
+      '/api/entries/:id',
+      asyncHandler((req: Request, res: Response) => {
+        this.logger.info(`DELETE /api/entries/${req.params.id}`)
+        const id = req.params.id as string
+        this.controller.deleteEntry(res, id)
+      }),
+    )
   }
 
   getExpressApp(): express.Express {

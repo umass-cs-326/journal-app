@@ -1,0 +1,19 @@
+### Exercise 4.6 async clone route checks
+
+### Step 1: create a base entry
+POST http://localhost:3000/entries/new
+Content-Type: application/x-www-form-urlencoded
+
+content=Original+entry+for+clone
+
+### Step 2: clone the entry
+POST http://localhost:3000/entries/1/clone
+
+### Step 3: verify the cloned entry exists (should be id 2)
+GET http://localhost:3000/entries/2
+
+### Step 4: clone a missing entry (expect 404)
+POST http://localhost:3000/entries/999/clone
+
+### Optional: to trigger 400 for invalid content, create a very long entry
+### (length >= 4994) and then clone it to exceed the 5000 char limit.

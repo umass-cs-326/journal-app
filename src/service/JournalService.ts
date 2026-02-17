@@ -10,6 +10,7 @@ import { JournalError, InvalidContent, ValidationError } from './errors.js'
  */
 export interface IJournalService {
   createEntry(content: string): Promise<Result<IJournalEntry, JournalError>>
+  cloneEntry(id: string): Promise<Result<IJournalEntry, JournalError>>
   getEntry(id: string): Promise<Result<IJournalEntry, JournalError>>
   getEntries(): Promise<Result<IJournalEntry[], JournalError>>
   replaceEntry(
@@ -42,6 +43,28 @@ class JournalService implements IJournalService {
     }
 
     return this.repository.add(normalized)
+  }
+
+  async cloneEntry(id: string): Promise<Result<IJournalEntry, JournalError>> {
+    const existing = await this.repository.getById(id)
+    if (!existing.ok) {
+      return existing
+    }
+
+    const clonedContent = `CLONE: ${existing.value.content}`
+    const normalized = clonedContent.trim()
+
+    if (!normalized) {
+      return Err(InvalidContent('Entry content is required.'))
+    }
+
+    if (normalized.length > 5000) {
+      return Err(
+        ValidationError('Entry content must be 5000 characters or fewer.'),
+      )
+    }
+
+    return this.repository.addClone(normalized)
   }
 
   async getEntry(id: string): Promise<Result<IJournalEntry, JournalError>> {

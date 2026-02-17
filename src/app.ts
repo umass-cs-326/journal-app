@@ -113,6 +113,15 @@ export class ExpressApp implements IApp {
     )
 
     this.app.post(
+      '/entries/:id/clone',
+      asyncHandler(async (req, res) => {
+        this.logger.info(`POST /entries/${req.params.id}/clone`)
+        const id = req.params.id as string
+        await this.controller.cloneEntryFromForm(res, id)
+      }),
+    )
+
+    this.app.post(
       '/entries/:id/delete',
       asyncHandler(async (req, res) => {
         this.logger.info(`POST /entries/${req.params.id}/delete`)

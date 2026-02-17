@@ -7,6 +7,7 @@ export interface IJournalController {
   showHome(res: Response): Promise<void>
   showEntryForm(res: Response): Promise<void>
   newEntryFromForm(res: Response, content: string): Promise<void>
+  cloneEntryFromForm(res: Response, id: string): Promise<void>
   showAllEntries(res: Response): Promise<void>
   showEntry(res: Response, id: string): Promise<void>
   showEditForm(res: Response, id: string): Promise<void>
@@ -71,6 +72,22 @@ class JournalController implements IJournalController {
 
     if (!result.ok) {
       res.status(500).send('Unable to create entry.')
+      return
+    }
+
+    res.redirect(`/entries/${result.value.id}`)
+  }
+
+  async cloneEntryFromForm(res: Response, id: string): Promise<void> {
+    this.logger.info(`Cloning entry ${id} from form POST`)
+
+    const result = await this.service.cloneEntry(id)
+    if (!result.ok && this.isJournalError(result.value)) {
+      res.status(this.mapErrorStatus(result.value)).send(result.value.message)
+      return
+    }
+    if (!result.ok) {
+      res.status(500).send('Unable to clone entry')
       return
     }
 

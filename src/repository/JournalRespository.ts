@@ -14,6 +14,7 @@ import {
  */
 export interface IJournalRepository {
   add(content: string): Promise<Result<IJournalEntry, JournalError>>
+  addClone(content: string): Promise<Result<IJournalEntry, JournalError>>
   getById(id: string): Promise<Result<IJournalEntry, JournalError>>
   getAll(): Promise<Result<IJournalEntry[], JournalError>>
   replaceById(
@@ -40,6 +41,10 @@ class JournalRepository implements IJournalRepository {
     const entry = createJournalEntry(String(this.nextId++), content)
     this.entries.push(entry)
     return Promise.resolve(Ok(entry))
+  }
+
+  addClone(content: string): Promise<Result<IJournalEntry, JournalError>> {
+    return this.add(content)
   }
 
   getById(id: string): Promise<Result<IJournalEntry, JournalError>> {

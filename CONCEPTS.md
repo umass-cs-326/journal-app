@@ -1,97 +1,110 @@
-# Lecture 4.6 Concepts: Asynchronous Execution Model
+# Lecture 5.7 Concepts: Testing as Contract Verification
 
 ## Overview
 
-In this lecture we move the journal app to a consistent async execution model. We add a small helper for async route handlers, shift repository and service methods to return Promises, and then update routes to return and await controller calls. The final cleanup removes redundant type annotations so the async code is easier to read.
+In this lecture we treat tests as executable contracts. We add Jest and Supertest to the project, define service-level tests for domain behavior, and define HTTP integration tests for route/controller behavior. Together these tests verify what the system promises to callers, rather than how it is internally implemented.
 
 ## Big Picture
 
-A request starts at the route, moves through the controller and service, then reaches the repository. In this iteration, every step can return a Promise, so errors can be caught in one place and handled consistently. Wrapping routes with an async handler lets Express receive errors from async code. Using async/await makes the flow easy to follow, while keeping type annotations light makes the code more approachable.
+Every layer in this architecture publishes a contract:
+
+- Service contract: given inputs, return `Result<T, JournalError>` consistently.
+- Controller/HTTP contract: map domain outcomes to clear HTTP semantics (status, body, redirect, render target).
+- Composition contract: wire dependencies so runtime and tests exercise the same behavior.
+
+By testing at those boundaries, we can refactor internals without changing observable behavior.
 
 ## Concepts List
 
-- Promises as the standard async return type
-- Async function boundaries across layers
-- Async route handler wrappers
-- Express error propagation with `next`
-- Returning Promises from handlers
-- async/await for linear control flow
-- Consistent async interfaces in TypeScript
-- Type inference to reduce noise
-- Gradual async migration for future I/O
+- Tests as executable contracts
+- Jest as a deterministic test runner
+- Supertest for HTTP boundary verification
+- Service-layer unit tests with repository substitution
+- Mapping `JournalError` to HTTP status semantics
+- Dependency injection and composition roots for testability
+- Async test patterns with `await` and Promise-returning boundaries
+- Regression safety for iterative refactoring
 
-## Promises as the standard async return type
+## Tests as executable contracts
 
-Promises provide a uniform way to represent work that completes later. By returning Promises from repositories, services, and controllers, each layer can be awaited by the next one. Why: We choose Promises because they are the native async primitive in JavaScript and they compose cleanly across layers. Used in Step 2, Step 3.
+A test can be read as a promise about system behavior. If the promise fails, the contract was broken.
 
-Required Reading:
-
-- https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise
-
-## Async function boundaries across layers
-
-Async boundaries are the places where a function returns a Promise and can be awaited. In this lecture, repository, service, and controller methods are all async-ready so the call chain stays consistent. Why: We choose consistent async boundaries to avoid mixing sync and async assumptions across the app. Used in Step 2, Step 3, Step 5, Step 6.
+Why: This gives us a precise way to protect behavior while still allowing refactors.
 
 Required Reading:
 
-- https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function
+- https://martinfowler.com/bliki/ContractTest.html
 
-## Async route handler wrappers
+## Jest as a deterministic test runner
 
-Express does not automatically catch rejected Promises from async handlers. A wrapper like `asyncHandler` ensures any async error is forwarded to Express error handling. Why: We choose a wrapper so route code can stay clean while errors still flow to `next`. Used in Step 1, Step 4.
+Jest gives us fast, repeatable tests with clear failure output and rich matchers. It is ideal for teaching incremental behavior changes.
+
+Why: We choose Jest because students can focus on behavior assertions with minimal setup overhead.
 
 Required Reading:
 
-- https://expressjs.com/en/guide/error-handling.html
+- https://jestjs.io/docs/getting-started
 
-## Express error propagation with `next`
+## Supertest for HTTP boundary verification
 
-In Express, calling `next(err)` hands control to the error middleware. The async wrapper uses `catch(next)` so errors from Promises are handled the same way as thrown errors. Why: We choose `next` to stay within Express’s standard error flow. Used in Step 1.
+Supertest drives an Express app without opening a network port. It allows us to assert status codes, redirects, headers, and body payloads as a caller would observe them.
 
-References:
+Why: We choose Supertest because it validates the real HTTP contract end-to-end.
 
-- https://expressjs.com/en/guide/error-handling.html
+Required Reading:
 
-## Returning Promises from handlers
+- https://github.com/ladjs/supertest
 
-Even when a handler is wrapped, it still needs to return the Promise so the wrapper can observe failures. Returning the controller call ensures errors are not swallowed. Why: We choose explicit returns to keep error handling reliable. Used in Step 5.
+## Service-layer unit tests with repository substitution
 
-References:
+Service tests replace the repository with a controlled fake so we can verify validation and delegation independently from storage implementation details.
 
-- https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/return
+Why: We choose substitution so each test isolates a single boundary and failure mode.
 
-## async/await for linear control flow
+Required Reading:
 
-`async` and `await` let us write asynchronous code that reads top-to-bottom like synchronous code. This reduces cognitive load for students and makes control flow clearer. Why: We choose async/await for readability, especially in route handlers. Used in Step 6.
+- https://martinfowler.com/articles/mocksArentStubs.html
 
-References:
+## Mapping JournalError to HTTP status semantics
 
-- https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/await
+Controllers translate typed domain failures (for example `EntryNotFound`) into stable status codes and response shapes.
 
-## Consistent async interfaces in TypeScript
+Why: We choose explicit mapping because client behavior depends on these semantics.
 
-TypeScript interfaces that return Promises make async behavior explicit for callers. When the repository and service both return Promises, the controller can await them without guessing. Why: We choose explicit Promise return types to align code behavior and types. Used in Step 2, Step 3.
+Required Reading:
 
-References:
+- https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
 
-- https://www.typescriptlang.org/docs/handbook/2/functions.html
+## Dependency injection and composition roots for testability
 
-## Type inference to reduce noise
+A composition root centralizes dependency wiring. Tests can reuse the same wiring and inject test doubles where needed.
 
-TypeScript can infer parameter types from context, which allows us to remove repeated annotations in route handlers. This keeps the code focused on behavior instead of boilerplate. Why: We choose inference in simple cases to improve readability for learners. Used in Step 7.
-
-References:
-
-- https://www.typescriptlang.org/docs/handbook/type-inference.html
-
-## Gradual async migration for future I/O
-
-Even if the repository is in-memory today, returning Promises makes it easy to replace with a real database later without changing the rest of the app. Why: We choose a gradual migration path so the design scales when persistence becomes truly async. Used in Step 2, Step 3.
+Why: We choose a composition root to avoid duplicating setup logic and drifting runtime/test behavior.
 
 References:
 
-- https://nodejs.org/en/learn/asynchronous-work/asynchronous-flow-control
+- https://martinfowler.com/articles/injection.html
+
+## Async test patterns with await and Promise-returning boundaries
+
+When production code is async, tests should await those boundaries to avoid false positives and race conditions.
+
+Why: We choose `await`-first tests to ensure assertions run after behavior completes.
+
+References:
+
+- https://jestjs.io/docs/asynchronous
+
+## Regression safety for iterative refactoring
+
+Once tests capture stable behavior, we can safely restructure internals while continuously verifying that public behavior remains unchanged.
+
+Why: We choose this workflow so each lecture can extend the system without breaking earlier promises.
+
+References:
+
+- https://martinfowler.com/articles/practical-test-pyramid.html
 
 ## Conclusion
 
-These concepts matter because they make async behavior predictable and teachable. By standardizing on Promises, wrapping route handlers, and using async/await, we make error handling consistent and control flow easy to follow. This prepares the app for real async I/O later while keeping the current code simple for students.
+Testing in this lecture is not about coverage percentages. It is about contract clarity: which promises this system makes, where those promises live, and how we verify them continuously as the architecture evolves.

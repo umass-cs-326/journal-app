@@ -1,9 +1,6 @@
 import request from 'supertest'
 import type { Express } from 'express'
-import { CreateApp } from '../../src/app.js'
-import { CreateJournalController } from '../../src/controller/JournalController.js'
-import { CreateJournalRepository } from '../../src/repository/JournalRespository.js'
-import { CreateJournalService } from '../../src/service/JournalService.js'
+import { createComposedApp } from '../../src/composition.js'
 import type { ILoggingService } from '../../src/service/LoggingService.js'
 
 function makeSilentLogger(): ILoggingService {
@@ -14,19 +11,11 @@ function makeSilentLogger(): ILoggingService {
   }
 }
 
-function buildExpressApp(): Express {
-  const repository = CreateJournalRepository()
-  const service = CreateJournalService(repository)
-  const logger = makeSilentLogger()
-  const controller = CreateJournalController(service, logger)
-  return CreateApp(controller, logger).getExpressApp()
-}
-
 describe('HTTP contract verification', () => {
   let app: Express
 
   beforeEach(() => {
-    app = buildExpressApp()
+    app = createComposedApp(makeSilentLogger()).getExpressApp()
   })
 
   it('renders home page', async () => {
